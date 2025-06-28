@@ -1,11 +1,19 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { useGame } from '../context/GameContext'; // Import the useGame hook
+import { useGame } from '../context/GameContext';
+import { jwtDecode } from 'jwt-decode'; // Import the JWT decoding library
 
-// Define the navigation items
+// Define a type for our JWT payload to access the user's admin status
+interface JwtPayload {
+  user: {
+    is_admin: boolean;
+  };
+}
+
 const navItems = [
-  // The "Play" and "Main Menu" items are now handled separately below
+  { name: 'Main Menu', href: '/dashboard', icon: '🏠' },
   { name: 'Team Builder', href: '/team-builder', icon: '👥' },
   { name: 'Roster', href: '/roster', icon: '📖' },
   { name: 'Missions', href: '/missions', icon: '🎯' },
@@ -14,10 +22,25 @@ const navItems = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { connectAndFindMatch, statusMessage } = useGame(); // Get matchmaking functions from context
+  const { connectAndFindMatch, statusMessage } = useGame();
+  const [isAdmin, setIsAdmin] = useState(false); // State to track admin status
+
+  useEffect(() => {
+    // Check the user's token for admin status when the component mounts
+    const token = localStorage.getItem('arena-token');
+    if (token) {
+      try {
+        const decodedToken = jwtDecode<JwtPayload>(token);
+        if (decodedToken.user && decodedToken.user.is_admin) {
+          setIsAdmin(true);
+        }
+      } catch (error) {
+        console.error("Invalid token found:", error);
+      }
+    }
+  }, []);
 
   const handleLogout = () => {
-    // Clear the user's token and redirect to the login page
     localStorage.removeItem('arena-token');
     router.push('/');
   };
@@ -29,7 +52,6 @@ export default function Sidebar() {
       </div>
       <nav className="flex-grow">
         <ul>
-          {/* Special "Play" button that triggers matchmaking */}
           <li className="mb-4">
             <button
               onClick={connectAndFindMatch}
@@ -40,22 +62,8 @@ export default function Sidebar() {
             </button>
           </li>
           
-          {/* New "Main Menu" button */}
-          <li className="mb-4">
-             <a
-                href="/dashboard"
-                className={`flex items-center p-3 rounded-lg transition-colors ${
-                  pathname === '/dashboard' ? 'bg-blue-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
-                }`}
-              >
-                <span className="mr-3 text-lg">🏠</span>
-                <span>Main Menu</span>
-              </a>
-          </li>
-
-
           {navItems.map((item) => (
-            <li key={item.name} className="mb-4">
+            <li key={item.name} className="mb-2">
               <a
                 href={item.href}
                 className={`flex items-center p-3 rounded-lg transition-colors ${
@@ -70,15 +78,25 @@ export default function Sidebar() {
         </ul>
       </nav>
       
-      {/* Matchmaking status message is now here */}
       <div className="text-center p-2 mb-2 h-12">
         <p className="text-gray-400 text-sm animate-pulse">{statusMessage}</p>
       </div>
 
       <div>
+        {/* --- NEW: Conditionally render the Admin Dashboard link --- */}
+        {isAdmin && (
+           <a
+            href="/admin/dashboard" // Assuming this is the main admin page route
+            className="w-full flex items-center p-3 mb-2 rounded-lg text-gray-300 bg-red-800 bg-opacity-50 hover:bg-red-700 hover:text-white transition-colors"
+          >
+            <span className="mr-3 text-lg">⚙️</span>
+            <span>Admin Dashboard</span>
+          </a>
+        )}
+
         <button
           onClick={handleLogout}
-          className="w-full flex items-center p-3 rounded-lg text-gray-300 hover:bg-red-800 hover:text-white transition-colors"
+          className="w-full flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
         >
           <span className="mr-3 text-lg">🚪</span>
           <span>Logout</span>
