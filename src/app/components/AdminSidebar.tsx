@@ -25,7 +25,7 @@ export default function AdminSidebar() {
               <Link
                 href={`/admin${item.href}`}
                 className={`flex items-center p-3 rounded-lg transition-colors ${
-                  pathname.startsWith(`/admin${item.href}`) ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
+                  pathname.startsWith(`${item.href}`) ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                 }`}
               >
                 <span className="mr-3 text-lg">{item.icon}</span>
