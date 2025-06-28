@@ -21,7 +21,7 @@ export default function AdminCharactersPage() {
   const fetchCharacters = async () => {
     const token = localStorage.getItem('arena-token');
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/characters`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/getCharacters`, {
         headers: { 'x-auth-token': token }
       });
       setCharacters(response.data);
