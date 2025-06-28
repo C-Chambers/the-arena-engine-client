@@ -23,7 +23,7 @@ export default function AdminSidebar() {
           {navItems.map((item) => (
             <li key={item.name} className="mb-2">
               <Link
-                href={`/admin${item.href}`}
+                href={`${item.href}`}
                 className={`flex items-center p-3 rounded-lg transition-colors ${
                   pathname.startsWith(`${item.href}`) ? 'bg-red-600 text-white' : 'text-gray-300 hover:bg-gray-700 hover:text-white'
                 }`}
