@@ -13,14 +13,15 @@ interface Skill {
   effects: object[];
 }
 
+// UPDATED: The type now correctly uses 'id' to match the API response
 interface CharacterForSelect {
-  character_id: string;
+  id: string;
   name: string;
 }
 
 export default function AdminSkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
-  const [characters, setCharacters] = useState<CharacterForSelect[]>([]); // State for character dropdown
+  const [characters, setCharacters] = useState<CharacterForSelect[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -43,16 +44,14 @@ export default function AdminSkillsPage() {
     
     setIsLoading(true);
     try {
-      // Fetch both skills and characters concurrently
       const [skillsRes, charsRes] = await Promise.all([
         axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/skills`, { headers: { 'x-auth-token': token } }),
         axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/getCharacters`, { headers: { 'x-auth-token': token } })
       ]);
       setSkills(skillsRes.data);
       setCharacters(charsRes.data);
-      // Set default owner to the first character in the list
       if (charsRes.data.length > 0) {
-        setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].character_id }));
+        setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].id }));
       }
     } catch (err) {
       setError('Failed to fetch data.');
@@ -81,12 +80,16 @@ export default function AdminSkillsPage() {
       JSON.parse(newSkill.cost);
       JSON.parse(newSkill.effects);
 
-      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/skills`, newSkill, {
+      const response = await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/skills`, newSkill, {
         headers: { 'x-auth-token': token }
       });
-      // Reset form and refetch skills
-      setNewSkill({ skill_id: '', character_id: characters[0]?.character_id || '', name: '', description: '', cost: '{}', effects: '[]' });
+      
+      // We can just refetch all data to ensure the list is perfectly in sync
       fetchData();
+
+      // Reset form
+      setNewSkill({ skill_id: '', character_id: characters[0]?.id || '', name: '', description: '', cost: '{}', effects: '[]' });
+
     } catch (err) {
       alert('Failed to create skill. Make sure Cost and Effects are valid JSON.');
     }
@@ -102,11 +105,11 @@ export default function AdminSkillsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input name="skill_id" value={newSkill.skill_id} onChange={handleInputChange} placeholder="Skill ID (e.g., skill_sbt_10)" className="bg-gray-700 p-2 rounded" required />
             
-            {/* --- UPDATED: Replaced text input with a select dropdown --- */}
             <select name="character_id" value={newSkill.character_id} onChange={handleInputChange} className="bg-gray-700 p-2 rounded" required>
                 <option value="" disabled>Select Owner Character</option>
+                {/* --- UPDATED: Now uses char.id which exists on the object --- */}
                 {characters.map(char => (
-                    <option key={char.character_id} value={char.character_id}>{char.character_id}</option>
+                    <option key={char.id} value={char.id}>{char.name}</option>
                 ))}
             </select>
             
