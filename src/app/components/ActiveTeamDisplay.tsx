@@ -24,7 +24,7 @@ export default function ActiveTeamDisplay() {
         // The API returns an array of 0 to 3 characters. We need to place them
         // into our 3-slot array structure.
         const fetchedTeam = response.data;
-        const newTeamDisplay = [null, null, null];
+        const newTeamDisplay: (Character | null)[] = [null, null, null];
         fetchedTeam.forEach((char: Character, index: number) => {
             if(index < 3) {
                 newTeamDisplay[index] = char;
