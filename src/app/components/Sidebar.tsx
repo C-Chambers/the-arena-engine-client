@@ -86,7 +86,7 @@ export default function Sidebar() {
         {/* --- NEW: Conditionally render the Admin Dashboard link --- */}
         {isAdmin && (
            <a
-            href="/admin/adminDashboard" // Assuming this is the main admin page route
+            href="/adminDashboard" // Corrected the path to match your folder name
             className="w-full flex items-center p-3 mb-2 rounded-lg text-gray-300 bg-red-800 bg-opacity-50 hover:bg-red-700 hover:text-white transition-colors"
           >
             <span className="mr-3 text-lg">⚙️</span>
