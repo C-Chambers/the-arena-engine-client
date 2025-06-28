@@ -64,7 +64,6 @@ export default function TeamBuilderPage() {
 
   const handleSelectCharacter = (character: Character) => {
     // We assume the character object from the roster has the `isUnlocked` property
-    // @ts-ignore
     if (character.isUnlocked) {
       setSelectedCharacter(character);
     }
@@ -72,7 +71,6 @@ export default function TeamBuilderPage() {
 
   const handleAddSelectedToTeam = () => {
     if (!selectedCharacter) return;
-    // @ts-ignore
     if (!selectedCharacter.isUnlocked) {
         setSaveStatus('This character is locked.');
         return;
@@ -198,7 +196,6 @@ export default function TeamBuilderPage() {
                 <>
                   <h3 className="text-2xl font-bold text-blue-400">{selectedCharacter.name}</h3>
                   <p className="text-gray-300 mt-2 text-sm">A brief bio or description of the character's playstyle will go here, providing insight into their strengths and synergies.</p>
-                   {/* @ts-ignore */}
                   {selectedCharacter.isUnlocked ? (
                     <button onClick={handleAddSelectedToTeam} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Add to Team</button>
                   ) : (
