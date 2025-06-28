@@ -13,8 +13,14 @@ interface Skill {
   effects: object[];
 }
 
+interface CharacterForSelect {
+  character_id: string;
+  name: string;
+}
+
 export default function AdminSkillsPage() {
   const [skills, setSkills] = useState<Skill[]>([]);
+  const [characters, setCharacters] = useState<CharacterForSelect[]>([]); // State for character dropdown
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
@@ -27,25 +33,39 @@ export default function AdminSkillsPage() {
     effects: '[]',
   });
 
-  const fetchSkills = async () => {
+  const fetchData = async () => {
     const token = localStorage.getItem('arena-token');
+    if (!token) {
+      setError('Authentication Error');
+      setIsLoading(false);
+      return;
+    }
+    
+    setIsLoading(true);
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/skills`, {
-        headers: { 'x-auth-token': token }
-      });
-      setSkills(response.data);
+      // Fetch both skills and characters concurrently
+      const [skillsRes, charsRes] = await Promise.all([
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/skills`, { headers: { 'x-auth-token': token } }),
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/characters`, { headers: { 'x-auth-token': token } })
+      ]);
+      setSkills(skillsRes.data);
+      setCharacters(charsRes.data);
+      // Set default owner to the first character in the list
+      if (charsRes.data.length > 0) {
+        setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].character_id }));
+      }
     } catch (err) {
-      setError('Failed to fetch skills.');
+      setError('Failed to fetch data.');
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchSkills();
+    fetchData();
   }, []);
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     setNewSkill(prev => ({ ...prev, [name]: value }));
   };
@@ -53,16 +73,20 @@ export default function AdminSkillsPage() {
   const handleCreateSkill = async (e: React.FormEvent) => {
     e.preventDefault();
     const token = localStorage.getItem('arena-token');
+    if (!newSkill.character_id) {
+        alert('Please select a character owner.');
+        return;
+    }
     try {
-      // Basic validation for JSON fields
       JSON.parse(newSkill.cost);
       JSON.parse(newSkill.effects);
 
       await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/skills`, newSkill, {
         headers: { 'x-auth-token': token }
       });
-      setNewSkill({ skill_id: '', character_id: '', name: '', description: '', cost: '{}', effects: '[]' });
-      fetchSkills();
+      // Reset form and refetch skills
+      setNewSkill({ skill_id: '', character_id: characters[0]?.character_id || '', name: '', description: '', cost: '{}', effects: '[]' });
+      fetchData();
     } catch (err) {
       alert('Failed to create skill. Make sure Cost and Effects are valid JSON.');
     }
@@ -77,7 +101,15 @@ export default function AdminSkillsPage() {
         <form onSubmit={handleCreateSkill} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input name="skill_id" value={newSkill.skill_id} onChange={handleInputChange} placeholder="Skill ID (e.g., skill_sbt_10)" className="bg-gray-700 p-2 rounded" required />
-            <input name="character_id" value={newSkill.character_id} onChange={handleInputChange} placeholder="Owner Character ID" className="bg-gray-700 p-2 rounded" required />
+            
+            {/* --- UPDATED: Replaced text input with a select dropdown --- */}
+            <select name="character_id" value={newSkill.character_id} onChange={handleInputChange} className="bg-gray-700 p-2 rounded" required>
+                <option value="" disabled>Select Owner Character</option>
+                {characters.map(char => (
+                    <option key={char.character_id} value={char.character_id}>{char.name}</option>
+                ))}
+            </select>
+            
             <input name="name" value={newSkill.name} onChange={handleInputChange} placeholder="Skill Name" className="bg-gray-700 p-2 rounded" required />
           </div>
           <textarea name="description" value={newSkill.description} onChange={handleInputChange} placeholder="Skill Description" className="w-full bg-gray-700 p-2 rounded" rows={2} required />
