@@ -5,21 +5,16 @@ import axios from 'axios';
 import { Character } from '../../types';
 import Image from 'next/image';
 
-// Add isUnlocked to our Character type for the frontend
-interface RosterCharacter extends Character {
-  isUnlocked: boolean;
-}
-
 export default function TeamBuilderPage() {
-  const [roster, setRoster] = useState<RosterCharacter[]>([]);
+  const [roster, setRoster] = useState<Character[]>([]);
   const [activeTeam, setActiveTeam] = useState<(Character | null)[]>([null, null, null]);
-  const [selectedCharacter, setSelectedCharacter] = useState<RosterCharacter | null>(null);
+  const [selectedCharacter, setSelectedCharacter] = useState<Character | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const [saveStatus, setSaveStatus] = useState('');
 
   useEffect(() => {
-    const fetchRoster = async () => {
+    const fetchData = async () => {
       const token = localStorage.getItem('arena-token');
       if (!token) {
         setError('Authentication error. Please log in.');
@@ -28,37 +23,60 @@ export default function TeamBuilderPage() {
       }
 
       try {
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/characters`, {
-          headers: { 'x-auth-token': token },
-        });
-        
-        setRoster(response.data);
-        // Set the default selected character to the first *unlocked* one
-        const firstUnlocked = response.data.find((char: RosterCharacter) => char.isUnlocked);
-        if (firstUnlocked) {
-          setSelectedCharacter(firstUnlocked);
-        }
+        // Fetch both the full roster and the user's saved team concurrently
+        const [rosterRes, teamRes] = await Promise.all([
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/characters`, { headers: { 'x-auth-token': token } }),
+          axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/team`, { headers: { 'x-auth-token': token } })
+        ]);
 
+        const fullRoster = rosterRes.data;
+        setRoster(fullRoster);
+
+        // Pre-populate the active team with the saved data
+        const savedTeam = teamRes.data;
+        const newTeamDisplay: (Character | null)[] = [null, null, null];
+        savedTeam.forEach((char: Character, index: number) => {
+          if (index < 3) {
+            // Find the full character object from the roster to ensure we have all data
+            const rosterChar = fullRoster.find((c: Character) => c.id === char.id);
+            if (rosterChar) {
+              newTeamDisplay[index] = rosterChar;
+            }
+          }
+        });
+        setActiveTeam(newTeamDisplay);
+
+        // Set the default selected character
+        if (fullRoster.length > 0) {
+          setSelectedCharacter(fullRoster.find((char: Character) => char.isUnlocked) || fullRoster[0]);
+        }
+        
       } catch (err) {
-        setError('Failed to load character roster.');
+        setError('Failed to load team data.');
         console.error(err);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchRoster();
+    fetchData();
   }, []);
 
-  const handleSelectCharacter = (character: RosterCharacter) => {
-    // Only allow selecting unlocked characters
+  const handleSelectCharacter = (character: Character) => {
+    // We assume the character object from the roster has the `isUnlocked` property
+    // @ts-ignore
     if (character.isUnlocked) {
       setSelectedCharacter(character);
     }
   };
 
   const handleAddSelectedToTeam = () => {
-    if (!selectedCharacter || !selectedCharacter.isUnlocked) return;
+    if (!selectedCharacter) return;
+    // @ts-ignore
+    if (!selectedCharacter.isUnlocked) {
+        setSaveStatus('This character is locked.');
+        return;
+    }
     if (activeTeam.some(member => member?.id === selectedCharacter.id)) {
         setSaveStatus('This character is already on your team.');
         return;
@@ -131,12 +149,13 @@ export default function TeamBuilderPage() {
       </div>
 
       <div className="flex flex-grow gap-8 p-4">
+        {/* Left Column */}
         <div className="w-1/2 flex flex-col gap-8">
           <div className="h-1/2 bg-gray-900 p-6 rounded-lg flex flex-col">
             <h2 className="text-xl font-bold mb-4">Full Roster</h2>
             <div className="overflow-y-auto pr-2 flex-grow">
               <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-                {roster.map(char => (
+                {roster.map((char: any) => ( // Using any here to access isUnlocked
                   <div 
                     key={char.id} 
                     className={`p-2 rounded-lg text-center border-2 transition-all min-w-0 relative ${
@@ -179,6 +198,7 @@ export default function TeamBuilderPage() {
                 <>
                   <h3 className="text-2xl font-bold text-blue-400">{selectedCharacter.name}</h3>
                   <p className="text-gray-300 mt-2 text-sm">A brief bio or description of the character's playstyle will go here, providing insight into their strengths and synergies.</p>
+                   {/* @ts-ignore */}
                   {selectedCharacter.isUnlocked ? (
                     <button onClick={handleAddSelectedToTeam} className="mt-4 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg">Add to Team</button>
                   ) : (
@@ -192,6 +212,7 @@ export default function TeamBuilderPage() {
           </div>
         </div>
 
+        {/* Right Column */}
         <div className="w-1/2 flex flex-col gap-8">
           <div className="flex-1 bg-gray-900 p-6 rounded-lg">
             <h2 className="text-xl font-bold mb-4">Active Team</h2>
