@@ -29,7 +29,7 @@ export default function MissionsPage() {
       }
 
       try {
-        const response = await axios.get('http://localhost:3001/api/missions', {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/missions`, {
           headers: {
             'x-auth-token': token,
           },

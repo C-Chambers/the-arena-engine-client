@@ -31,7 +31,7 @@ export default function PlayerRankDisplay() {
       if (!token) return;
 
       try {
-        const response = await axios.get('http://localhost:3001/api/ratings', {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings`, {
           headers: { 'x-auth-token': token },
         });
         setRatingInfo(response.data);

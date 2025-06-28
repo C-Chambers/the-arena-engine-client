@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
-const API_URL = 'http://localhost:3001/api/auth';
+const API_URL = `${process.env.NEXT_PUBLIC_API_URL}/api/auth`;
 
 export default function Login() {
   const [email, setEmail] = useState('');

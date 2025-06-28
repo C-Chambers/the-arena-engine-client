@@ -25,7 +25,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const handleGameEnd = async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
     try {
-      const response = await axios.get('http://localhost:3001/api/ratings/me', {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings/me`, {
         headers: { 'x-auth-token': token },
       });
       setPostGameStats({ finalState: finalGameState, newRating: response.data });
@@ -48,7 +48,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     setStatusMessage('Connecting to server...');
-    const ws = new WebSocket(`ws://localhost:3001?token=${token}`);
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}?token=${token}`);
     socket.current = ws;
 
     ws.onopen = () => setStatusMessage('Connected! Waiting for an opponent...');

@@ -28,7 +28,7 @@ export default function TeamBuilderPage() {
       }
 
       try {
-        const response = await axios.get('http://localhost:3001/api/characters', {
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/characters`, {
           headers: { 'x-auth-token': token },
         });
         
@@ -96,7 +96,7 @@ export default function TeamBuilderPage() {
 
     try {
       await axios.post(
-        'http://localhost:3001/api/team', 
+        `${process.env.NEXT_PUBLIC_API_URL}/api/team`, 
         { teamCharacterIds },
         { headers: { 'x-auth-token': token } }
       );
