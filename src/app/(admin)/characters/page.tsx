@@ -21,7 +21,7 @@ export default function AdminCharactersPage() {
   const fetchCharacters = async () => {
     const token = localStorage.getItem('arena-token');
     try {
-      const response = await axios.get('http://localhost:3001/api/admin/characters', {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/characters`, {
         headers: { 'x-auth-token': token }
       });
       setCharacters(response.data);
@@ -45,7 +45,7 @@ export default function AdminCharactersPage() {
     e.preventDefault();
     const token = localStorage.getItem('arena-token');
     try {
-      await axios.post('http://localhost:3001/api/admin/characters', {
+      await axios.post(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/characters`, {
         character_id: newChar.id,
         name: newChar.name,
         max_hp: newChar.maxHp,
@@ -65,7 +65,7 @@ export default function AdminCharactersPage() {
     if (window.confirm('Are you sure you want to delete this character and all associated skills? This cannot be undone.')) {
         const token = localStorage.getItem('arena-token');
         try {
-            await axios.delete(`http://localhost:3001/api/admin/characters/${charId}`, {
+            await axios.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/characters/${charId}`, {
                 headers: { 'x-auth-token': token }
             });
             fetchCharacters(); // Refresh the list
