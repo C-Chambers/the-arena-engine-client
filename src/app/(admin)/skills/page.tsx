@@ -46,7 +46,7 @@ export default function AdminSkillsPage() {
       // Fetch both skills and characters concurrently
       const [skillsRes, charsRes] = await Promise.all([
         axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/skills`, { headers: { 'x-auth-token': token } }),
-        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/characters`, { headers: { 'x-auth-token': token } })
+        axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/getCharacters`, { headers: { 'x-auth-token': token } })
       ]);
       setSkills(skillsRes.data);
       setCharacters(charsRes.data);
