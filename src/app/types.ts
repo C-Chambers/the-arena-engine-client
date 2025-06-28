@@ -17,4 +17,5 @@ export interface Character {
   skills: Skill[];
   isAlive: boolean;
   imageUrl: string;
+  isUnlocked?: boolean;
 }

@@ -153,7 +153,7 @@ export default function TeamBuilderPage() {
             <h2 className="text-xl font-bold mb-4">Full Roster</h2>
             <div className="overflow-y-auto pr-2 flex-grow">
               <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-                {roster.map((char: any) => ( // Using any here to access isUnlocked
+                {roster.map((char) => ( // Using any here to access isUnlocked
                   <div 
                     key={char.id} 
                     className={`p-2 rounded-lg text-center border-2 transition-all min-w-0 relative ${
