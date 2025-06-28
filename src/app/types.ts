@@ -16,4 +16,5 @@ export interface Character {
   maxHp: number;
   skills: Skill[];
   isAlive: boolean;
+  imageUrl: string;
 }
