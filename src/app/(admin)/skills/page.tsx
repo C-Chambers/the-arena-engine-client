@@ -106,7 +106,7 @@ export default function AdminSkillsPage() {
             <select name="character_id" value={newSkill.character_id} onChange={handleInputChange} className="bg-gray-700 p-2 rounded" required>
                 <option value="" disabled>Select Owner Character</option>
                 {characters.map(char => (
-                    <option key={char.character_id} value={char.character_id}>{char.name}</option>
+                    <option key={char.character_id} value={char.character_id}>{char.character_id}</option>
                 ))}
             </select>
             
