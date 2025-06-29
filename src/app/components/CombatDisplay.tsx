@@ -15,20 +15,18 @@ export default function CombatDisplay() {
 
   useEffect(() => {
     const storedId = localStorage.getItem('myId');
-    setMyId(storedId);
+    if (storedId) {
+      setMyId(storedId);
+    }
   }, []);
 
   useEffect(() => {
-    // DEBUG LOG 1: Check if the turn change is detected
-    console.log('TURN:', gameState?.turn, ', State updated. Resetting skill selection.');
     setSelectedSkill(null);
     setSelectedCaster(null);
   }, [gameState?.turn]);
 
 
   const handleUseSkill = (targetId: string) => {
-    // DEBUG LOG 4: Check if the final skill use handler is called
-    console.log('HANDLE USE SKILL: Sending skill', selectedSkill?.name, ' on target ', targetId);
     if (socket.current && selectedSkill && selectedCaster) {
       socket.current.send(JSON.stringify({ 
         type: 'USE_SKILL', 
@@ -38,23 +36,26 @@ export default function CombatDisplay() {
   };
 
   const handleEndTurn = () => {
-    console.log("HANDLE END TURN: Sending END_TURN action.");
     if(socket.current) {
         socket.current.send(JSON.stringify({ type: 'END_TURN' }));
     }
   };
   
   if (!gameState || !myId) {
-    return <div className="text-white text-center">Loading Game...</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="bg-gray-700 p-8 rounded-lg shadow-xl text-center">
+            <h2 className="text-2xl font-bold mb-4 text-white">Game Status</h2>
+            <p className="text-xl text-white animate-pulse">Waiting for game to start...</p>
+        </div>
+      </div>
+    );
   }
 
   const myPlayer = gameState.players[myId];
   const opponentPlayer = gameState.players[Object.keys(gameState.players).find(id => id !== myId)!];
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
-  // DEBUG LOG 2: Check the component's state on every render
-  console.log('RENDER CHECK: Turn=', gameState.turn, ', IsMyTurn=', isMyTurn, ', SelectedSkill=', selectedSkill?.name || 'null');
-
   const canAffordSkill = (skill: Skill) => {
     if (!myPlayer || !myPlayer.chakra) return false;
     for (const type in skill.cost) {
@@ -81,13 +82,7 @@ export default function CombatDisplay() {
             <CharacterCard 
               character={char} 
               isPlayer={false} 
-              onClick={() => {
-                  // DEBUG LOG 3: Check if clicking the opponent does anything
-                  console.log('TARGET CLICKED: Opponent', char.name, '. Conditions: selectedSkill=', !!selectedSkill, ', isMyTurn=', isMyTurn, ', isAlive=', char.isAlive);
-                  if (selectedSkill && isMyTurn && char.isAlive) {
-                      handleUseSkill(char.instanceId);
-                  }
-              }}
+              onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleUseSkill(char.instanceId) : undefined}
             />
           </div>
         ))}
@@ -107,27 +102,26 @@ export default function CombatDisplay() {
                 character={char} 
                 isPlayer={true} 
                 isSelected={selectedCaster === char.instanceId}
-                onClick={() => {
-                  console.log(`TARGET CLICKED: Ally ${char.name}. Conditions: selectedSkill=${!!selectedSkill}, isMyTurn=${isMyTurn}, isAlive=${char.isAlive}`);
-                  if (selectedSkill && isMyTurn && char.isAlive) {
-                    handleUseSkill(char.instanceId);
-                  }
-                }}
+                onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleUseSkill(char.instanceId) : undefined}
             />
           </div>
           <div className="flex-1 flex gap-2">
-            {char.skills.map((skill: Skill) => (
-              <SkillButton 
-                key={skill.id}
-                skill={skill}
-                canAfford={canAffordSkill(skill) && isMyTurn && char.isAlive}
-                onClick={() => {
-                  console.log(`SKILL BUTTON CLICKED: Set selectedSkill to ${skill.name}`);
-                  setSelectedSkill(skill);
-                  setSelectedCaster(char.instanceId);
-                }}
-              />
-            ))}
+            {char.skills.map((skill: Skill) => {
+              // --- NEW: Get the current cooldown for this specific skill ---
+              const cooldown = myPlayer.cooldowns[skill.id] || 0;
+              return (
+                <SkillButton 
+                  key={skill.id}
+                  skill={skill}
+                  canAfford={canAffordSkill(skill) && isMyTurn && char.isAlive}
+                  cooldown={cooldown} // Pass the cooldown value to the button
+                  onClick={() => {
+                    setSelectedSkill(skill);
+                    setSelectedCaster(char.instanceId);
+                  }}
+                />
+              )
+            })}
           </div>
         </div>
       ))}
