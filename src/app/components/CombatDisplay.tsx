@@ -7,16 +7,13 @@ import SkillButton from './SkillButton';
 import { useGame } from '../context/GameContext';
 
 export default function CombatDisplay() {
-  // Use context for all game state, socket, etc.
   const { gameState, socket, statusMessage } = useGame();
 
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
 
-  // myId is stored in localStorage by GameContext when GAME_START is received
   const myId = typeof window !== 'undefined' ? localStorage.getItem('myId') : null;
 
-  // If not in a game yet, show waiting/status
   if (!gameState) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -42,7 +39,6 @@ export default function CombatDisplay() {
     return true;
   };
 
-  // Use the shared socket from context to send actions
   const handleUseSkill = (targetId: string) => {
     if (socket.current && selectedSkill && selectedCaster) {
       socket.current.send(
@@ -70,7 +66,7 @@ export default function CombatDisplay() {
         {opponentPlayer &&
           opponentPlayer.team.map((char: Character) => (
             <div key={char.instanceId} className="flex-1">
-              <CharacterCard character={char} />
+              <CharacterCard character={char} isPlayer={false} />
             </div>
           ))}
       </div>
@@ -83,7 +79,7 @@ export default function CombatDisplay() {
               className={`flex-1 ${selectedCaster === char.instanceId ? 'ring-4 ring-blue-400' : ''}`}
               onClick={() => setSelectedCaster(char.instanceId)}
             >
-              <CharacterCard character={char} />
+              <CharacterCard character={char} isPlayer={true} />
               <div className="flex gap-2 mt-2">
                 {char.skills &&
                   char.skills.map((skill: Skill) => (
