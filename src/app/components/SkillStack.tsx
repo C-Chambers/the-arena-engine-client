@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay, rectIntersection } from '@dnd-kit/core';
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Image from 'next/image';
@@ -62,7 +62,7 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
     const { active, over } = event;
     setActiveAction(null); // Clear the active item after drag ends
 
-    // If 'over' is null, it means the item was dropped outside a valid target.
+    // This logic should now work correctly with the new collision strategy.
     if (active && !over) {
       const oldIndex = queue.findIndex(item => item.skill.id === active.id);
       if (oldIndex > -1) {
@@ -83,7 +83,8 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
       <h3 className="text-lg font-semibold mb-3 text-center">Skill Stack</h3>
       <DndContext 
         sensors={sensors} 
-        collisionDetection={closestCenter} 
+        // --- UPDATED: Switched to rectIntersection for collision detection ---
+        collisionDetection={rectIntersection} 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
