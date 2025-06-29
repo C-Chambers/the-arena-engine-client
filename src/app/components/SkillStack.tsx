@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// --- CHANGED: Import 'closestCenter' instead of 'rectIntersection' ---
-import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable, closestCenter } from '@dnd-kit/core';
+// --- CHANGED: Go back to using 'rectIntersection' ---
+import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable, rectIntersection } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Image from 'next/image';
@@ -41,6 +41,7 @@ function SortableSkill({ action }: { action: any }) {
     </div>
   );
 }
+
 
 // The main SkillStack component
 export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[], onReorder: (oldIndex: number, newIndex: number) => void, onRemove: (index: number) => void }) {
@@ -94,12 +95,13 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
   }
 
   return (
-    <div ref={setNodeRef} className="bg-gray-900 p-4 rounded-lg">
+    // --- THE FIRST FIX: Add a minimum height to the droppable container ---
+    <div ref={setNodeRef} className="bg-gray-900 p-4 rounded-lg min-h-[140px]">
       <h3 className="text-lg font-semibold mb-3 text-center">Skill Stack</h3>
       <DndContext 
         sensors={sensors} 
-        // --- THE FIX: Use 'closestCenter' for more accurate collision detection in this layout ---
-        collisionDetection={closestCenter} 
+        // --- THE SECOND FIX: Revert to 'rectIntersection' ---
+        collisionDetection={rectIntersection} 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
