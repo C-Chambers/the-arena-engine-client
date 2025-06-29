@@ -20,7 +20,7 @@ export default function CombatDisplay() {
 
   useEffect(() => {
     // DEBUG LOG 1: Check if the turn change is detected
-    console.log(`TURN ${gameState?.turn}: State updated. Resetting skill selection.`);
+    console.log(`TURN ${gameState.turn}: State updated. Resetting skill selection.`);
     setSelectedSkill(null);
     setSelectedCaster(null);
   }, [gameState?.turn]);
@@ -28,7 +28,7 @@ export default function CombatDisplay() {
 
   const handleUseSkill = (targetId: string) => {
     // DEBUG LOG 4: Check if the final skill use handler is called
-    console.log(`HANDLE USE SKILL: Sending skill ${selectedSkill?.name} on target ${targetId}`);
+    console.log(`HANDLE USE SKILL: Sending skill ${selectedSkill.name} on target ${targetId}`);
     if (socket.current && selectedSkill && selectedCaster) {
       socket.current.send(JSON.stringify({ 
         type: 'USE_SKILL', 
@@ -53,7 +53,7 @@ export default function CombatDisplay() {
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
   // DEBUG LOG 2: Check the component's state on every render
-  console.log(`RENDER CHECK: Turn=${gameState.turn}, IsMyTurn=${isMyTurn}, SelectedSkill=${selectedSkill?.name || 'null'}`);
+  console.log(`RENDER CHECK: Turn=${gameState.turn}, IsMyTurn=${isMyTurn}, SelectedSkill=${selectedSkill.name || 'null'}`);
 
   const canAffordSkill = (skill: Skill) => {
     if (!myPlayer || !myPlayer.chakra) return false;
