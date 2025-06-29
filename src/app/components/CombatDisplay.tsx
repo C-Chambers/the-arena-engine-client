@@ -15,6 +15,11 @@ export default function CombatDisplay() {
 
   useEffect(() => {
     if (socket.current) return;
+    const token = localStorage.getItem('arena-token');
+    if (!token) {
+      setStatusMessage('Authentication error. Please log in again.');
+      return;
+    }
     const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}?token=${token}`);
     socket.current = ws;
 
