@@ -15,7 +15,7 @@ export default function CombatDisplay() {
 
   useEffect(() => {
     if (socket.current) return;
-    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}`);
+    const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}?token=${token}`);
     socket.current = ws;
 
     ws.onopen = () => setStatusMessage('Connected! Waiting for an opponent...');
