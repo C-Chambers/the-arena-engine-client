@@ -31,7 +31,7 @@ export default function AdminLayout({
     }
     
     try {
-      const decodedToken = jwtDecode<JwtPayload>(token);
+      const decodedToken = jwt_decode<JwtPayload>(token);
       if (decodedToken.user && decodedToken.user.is_admin) {
         setIsAdmin(true); // User is an admin, allow access
       } else {
