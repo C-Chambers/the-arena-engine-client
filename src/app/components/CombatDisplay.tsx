@@ -65,7 +65,8 @@ export default function CombatDisplay() {
     <div className="w-full h-full flex flex-col gap-4">
       {/* Opponent's Team */}
       <div className="flex gap-4">
-        {opponentPlayer.team.map((char: Character) => (
+        {opponentPlayer &&
+          opponentPlayer.team.map((char: Character) => (
             <div key={char.instanceId} className="flex-1">
             <CharacterCard 
               character={char} 
