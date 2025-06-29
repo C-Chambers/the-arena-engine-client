@@ -74,7 +74,6 @@ export default function CombatDisplay() {
               isPlayer={false} 
               onClick={console.log(`skill? ${selectedSkill} - my turn? ${isMyTurn} -  caster: ${selectedCaster}` ); selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
             />
-          </div>
         ))}
       </div>
 
