@@ -15,12 +15,20 @@ interface GameState {
 
 const GameContext = createContext<GameState | undefined>(undefined);
 
+// Add this helper function near the top of your file, before your component definition.
+function formatSeconds(seconds: number): string {
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
 export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [postGameStats, setPostGameStats] = useState<any>(null);
   const socket = useRef<WebSocket | null>(null);
   const router = useRouter();
+
 
   const handleGameEnd = async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
