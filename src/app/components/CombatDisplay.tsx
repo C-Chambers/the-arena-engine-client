@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Character, Skill } from '../types';
 import CharacterCard from './CharacterCard';
 import SkillButton from './SkillButton';
