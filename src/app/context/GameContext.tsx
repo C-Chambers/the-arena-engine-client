@@ -11,6 +11,8 @@ interface GameContextState {
   socket: React.RefObject<WebSocket | null>;
   statusMessage: string;
   postGameStats: any;
+  errorMsg: string; // NEW: Add error state to the context
+  setErrorMsg: (msg: string) => void; // NEW: Add a setter for the error
 }
 
 const GameContext = createContext<GameContextState | undefined>(undefined);
@@ -19,13 +21,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [postGameStats, setPostGameStats] = useState<any>(null);
+  const [errorMsg, setErrorMsg] = useState(''); // NEW
   const socket = useRef<WebSocket | null>(null);
   const router = useRouter();
 
   const handleGameEnd = async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings/me`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings`, {
         headers: { 'x-auth-token': token },
       });
       setPostGameStats({ finalState: finalGameState, newRating: response.data });
@@ -52,6 +55,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     socket.current = ws;
 
     ws.onopen = () => setStatusMessage('Connected! Waiting for an opponent...');
+    
+    // --- This is now the ONLY onmessage handler ---
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'STATUS') {
@@ -68,11 +73,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } else if (data.type === 'OPPONENT_DISCONNECTED') {
         alert("Opponent has disconnected. Returning to dashboard.");
         router.push('/dashboard');
+      } else if (data.type === 'ACTION_ERROR') {
+          setErrorMsg(data.message);
+          setTimeout(() => setErrorMsg(''), 4000);
       } else if (data.type === 'ERROR') {
         setStatusMessage(`Error: ${data.message}`);
         ws.close();
       }
     };
+    
     ws.onclose = () => {
       setStatusMessage('Disconnected.');
       socket.current = null;
@@ -80,8 +89,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     ws.onerror = () => setStatusMessage('Connection Error.');
   };
 
+  const contextValue = { 
+      gameState, setGameState, connectAndFindMatch, 
+      socket, statusMessage, postGameStats,
+      errorMsg, setErrorMsg // NEW: Provide error state to consumers
+  };
+
   return (
-    <GameContext.Provider value={{ gameState, setGameState, connectAndFindMatch, socket, statusMessage, postGameStats }}>
+    <GameContext.Provider value={contextValue}>
       {children}
     </GameContext.Provider>
   );

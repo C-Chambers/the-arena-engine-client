@@ -8,12 +8,12 @@ import { useGame } from '../context/GameContext';
 import SkillStack from './SkillStack'; 
 
 export default function CombatDisplay() {
-  const { gameState, socket } = useGame();
+  // Get everything from the game context
+  const { gameState, socket, errorMsg, setErrorMsg } = useGame();
   
   const [myId, setMyId] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     const storedId = localStorage.getItem('myId');
@@ -22,33 +22,16 @@ export default function CombatDisplay() {
     }
   }, []);
 
+  // When a new turn starts, clear local state
   useEffect(() => {
-    const turn = gameState ? gameState.turn : 'N/A';
-    // DEBUG LOG 1: Check if the turn change is detected
     console.log(`%cTURN ${turn}: State updated. Resetting skill selection.`, 'color: yellow; font-weight: bold;');
     setSelectedSkill(null);
     setSelectedCaster(null);
-    setErrorMsg('');
-  }, [gameState?.turn]);
+    setErrorMsg(''); // Clear any old errors from the context
+  }, [gameState?.turn, setErrorMsg]);
 
-  // Handle incoming messages for errors
-  useEffect(() => {
-      if(socket.current) {
-          socket.current.onmessage = (event) => {
-              const data = JSON.parse(event.data);
-              // DEBUG LOG 1: See every message from the server
-              console.log('%c[SERVER MESSAGE RECEIVED]', 'color: magenta', data);
-              if (data.type === 'ACTION_ERROR') {
-                  setErrorMsg(data.message);
-                  setTimeout(() => setErrorMsg(''), 4000);
-              }
-              // The GameContext handles the main GAME_START and GAME_UPDATE
-          }
-      }
-  }, [socket]);
+  // The conflicting onmessage handler has been REMOVED from here.
 
-
-  // --- Action handlers for the Skill Stack system ---
   const handleQueueSkill = (targetId: string) => {
     const skillName = selectedSkill ? selectedSkill.name : 'Unknown Skill';
     // DEBUG LOG 4: Confirm this function is called
@@ -85,40 +68,14 @@ export default function CombatDisplay() {
   };
   
   if (!gameState || !myId) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="bg-gray-700 p-8 rounded-lg shadow-xl text-center">
-            <h2 className="text-2xl font-bold mb-4 text-white">Game Status</h2>
-            <p className="text-xl text-white animate-pulse">Waiting for game to start...</p>
-        </div>
-      </div>
-    );
+    // This part should rarely be seen now, as redirection happens in context
+    return <div className="text-white text-center">Loading Game...</div>;
   }
 
   const myPlayer = gameState.players[myId];
   const opponentPlayer = gameState.players[Object.keys(gameState.players).find(id => id !== myId)!];
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
-  const skillNameForLog = selectedSkill ? selectedSkill.name : 'null';
-  // DEBUG LOG 2: Check the component's state on every single render
-  console.log(`%cRENDER CHECK: Turn=${gameState.turn}, IsMyTurn=${isMyTurn}, SelectedSkill=${skillNameForLog}`, 'color: lightgray');
-
-  const canAffordSkill = (skill: Skill) => {
-    if (!myPlayer || !myPlayer.chakra) return false;
-    const currentCost = myPlayer.actionQueue.reduce((acc: any, action: any) => {
-        for (const type in action.skill.cost) {
-            acc[type] = (acc[type] || 0) + action.skill.cost[type];
-        }
-        return acc;
-    }, {});
-
-    for (const type in skill.cost) {
-        const futureCost = (currentCost[type] || 0) + skill.cost[type];
-        if (!myPlayer.chakra[type] || myPlayer.chakra[type] < futureCost) return false;
-    }
-    return true;
-  };
-
   if (gameState.isGameOver) {
     return (
         <div className="text-center text-white">
@@ -182,7 +139,7 @@ export default function CombatDisplay() {
                 <SkillButton 
                   key={skill.id}
                   skill={skill}
-                  canAfford={canAffordSkill(skill)}
+                  canAfford={true}
                   cooldown={cooldown}
                   isQueued={hasQueued}
                   onClick={() => {
