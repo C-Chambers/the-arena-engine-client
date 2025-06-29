@@ -4,8 +4,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Character, Skill } from '../types';
 import CharacterCard from './CharacterCard';
 import SkillButton from './SkillButton';
-import SkillStack from './SkillStack'; // Import the new SkillStack component
 import { useGame } from '../context/GameContext';
+import SkillStack from './SkillStack'; 
 
 export default function CombatDisplay() {
   const { gameState, socket } = useGame();
@@ -13,7 +13,7 @@ export default function CombatDisplay() {
   const [myId, setMyId] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string>('');
+  const [errorMsg, setErrorMsg] = useState('');
 
   useEffect(() => {
     const storedId = localStorage.getItem('myId');
@@ -23,38 +23,34 @@ export default function CombatDisplay() {
   }, []);
 
   useEffect(() => {
-    // When a new turn starts, clear selections and any old error messages
+    // When a new turn starts, clear local state
     setSelectedSkill(null);
     setSelectedCaster(null);
     setErrorMsg('');
   }, [gameState?.turn]);
 
-  // Handler for when a message is received from the server
+  // Handle incoming messages for errors
   useEffect(() => {
-    if (socket.current) {
-        socket.current.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            const { type, payload } = data; // Assuming a payload structure
-            
-            // The GameContext will handle the main state updates (GAME_START, GAME_UPDATE)
-            // This component only needs to handle local UI feedback like errors.
-            if (type === 'ACTION_ERROR') {
-                setErrorMsg(payload.message);
-                // Clear the error message after a few seconds
-                setTimeout(() => setErrorMsg(''), 3000);
-            }
-        };
-    }
+      if(socket.current) {
+          socket.current.onmessage = (event) => {
+              const data = JSON.parse(event.data);
+              if (data.type === 'ACTION_ERROR') {
+                  setErrorMsg(data.message);
+                  setTimeout(() => setErrorMsg(''), 4000);
+              }
+              // The GameContext handles the main GAME_START and GAME_UPDATE
+          }
+      }
   }, [socket]);
 
 
-  // --- NEW: Updated action handlers for the Skill Stack system ---
-
+  // --- Action handlers for the Skill Stack system ---
   const handleQueueSkill = (targetId: string) => {
     if (socket.current && selectedSkill && selectedCaster) {
+      const casterChar = gameState.players[myId!].team.find((c: Character) => c.instanceId === selectedCaster);
       socket.current.send(JSON.stringify({ 
         type: 'QUEUE_SKILL', 
-        payload: { skill: selectedSkill, casterId: selectedCaster, targetId: targetId } 
+        payload: { skill: selectedSkill, casterId: selectedCaster, targetId: targetId, caster: casterChar } 
       }));
       setSelectedSkill(null);
       setSelectedCaster(null);
@@ -62,15 +58,15 @@ export default function CombatDisplay() {
   };
 
   const handleDequeueSkill = (index: number) => {
-    if(socket.current) {
-        socket.current.send(JSON.stringify({ type: 'DEQUEUE_SKILL', payload: { queueIndex: index } }));
-    }
+      if(socket.current) {
+          socket.current.send(JSON.stringify({ type: 'DEQUEUE_SKILL', payload: { queueIndex: index } }));
+      }
   };
 
   const handleReorderQueue = (oldIndex: number, newIndex: number) => {
-    if(socket.current) {
-        socket.current.send(JSON.stringify({ type: 'REORDER_QUEUE', payload: { oldIndex, newIndex } }));
-    }
+      if(socket.current) {
+          socket.current.send(JSON.stringify({ type: 'REORDER_QUEUE', payload: { oldIndex, newIndex } }));
+      }
   };
 
   const handleExecuteTurn = () => {
@@ -94,6 +90,24 @@ export default function CombatDisplay() {
   const opponentPlayer = gameState.players[Object.keys(gameState.players).find(id => id !== myId)!];
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
+  const canAffordSkill = (skill: Skill) => {
+    // Chakra validation is now handled server-side, but we can do a simple check on the client for UX
+    if (!myPlayer || !myPlayer.chakra) return false;
+    // This is a simplified check for client-side feedback only
+    const currentCost = myPlayer.actionQueue.reduce((acc: any, action: any) => {
+        for (const type in action.skill.cost) {
+            acc[type] = (acc[type] || 0) + action.skill.cost[type];
+        }
+        return acc;
+    }, {});
+
+    for (const type in skill.cost) {
+        const futureCost = (currentCost[type] || 0) + skill.cost[type];
+        if (!myPlayer.chakra[type] || myPlayer.chakra[type] < futureCost) return false;
+    }
+    return true;
+  };
+
   if (gameState.isGameOver) {
     return (
         <div className="text-center text-white">
@@ -112,14 +126,14 @@ export default function CombatDisplay() {
             <CharacterCard 
               character={char} 
               isPlayer={false} 
-              onClick={selectedSkill && isMyTurn ? () => handleQueueSkill(char.instanceId) : undefined}
+              onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleQueueSkill(char.instanceId) : undefined}
             />
           </div>
         ))}
       </div>
 
-      {/* Turn Indicator & Error Message */}
-      <div className="text-center bg-gray-900 py-2 rounded-lg">
+      {/* Turn Indicator */}
+      <div className="text-center bg-gray-900 py-2 rounded-lg min-h-[56px]">
         <p className="font-bold text-xl">Turn {gameState.turn}: <span className={isMyTurn ? 'text-green-400' : 'text-red-400'}>{isMyTurn ? "Your Turn" : "Opponent's Turn"}</span></p>
         {selectedSkill && <p className="text-sm text-purple-400 animate-pulse">Select a target for {selectedSkill.name}</p>}
         {errorMsg && <p className="text-sm text-red-500 font-bold">{errorMsg}</p>}
@@ -133,22 +147,27 @@ export default function CombatDisplay() {
                 character={char} 
                 isPlayer={true} 
                 isSelected={selectedCaster === char.instanceId}
-                onClick={selectedSkill && isMyTurn ? () => handleQueueSkill(char.instanceId) : undefined}
+                onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleQueueSkill(char.instanceId) : undefined}
             />
           </div>
           <div className="flex-1 flex gap-2">
-            {char.skills.map((skill: Skill) => (
-              <SkillButton 
-                key={skill.id}
-                skill={skill}
-                canAfford={true} // Chakra validation is now handled server-side for the whole queue
-                cooldown={myPlayer.cooldowns[skill.id] || 0}
-                onClick={() => {
-                  setSelectedSkill(skill);
-                  setSelectedCaster(char.instanceId);
-                }}
-              />
-            ))}
+            {char.skills.map((skill: Skill) => {
+              const cooldown = myPlayer.cooldowns[skill.id] || 0;
+              const hasQueued = myPlayer.actionQueue.some((a: any) => a.casterId === char.instanceId);
+              return (
+                <SkillButton 
+                  key={skill.id}
+                  skill={skill}
+                  canAfford={canAffordSkill(skill)}
+                  cooldown={cooldown}
+                  isQueued={hasQueued}
+                  onClick={() => {
+                    setSelectedSkill(skill);
+                    setSelectedCaster(char.instanceId);
+                  }}
+                />
+              )
+            })}
           </div>
         </div>
       ))}
@@ -163,11 +182,6 @@ export default function CombatDisplay() {
                 <h4 className="font-bold text-lg mb-1">Your Chakra</h4>
                 <p className="font-mono text-purple-300">{JSON.stringify(myPlayer.chakra)}</p>
             </div>
-        <div className="w-1/2 bg-gray-900 p-3 rounded-lg font-mono text-xs overflow-y-auto h-24">
-            <h4 className="font-bold">Game Log:</h4>
-            {gameState.log.slice().reverse().map((line: string, i: number) => <p key={i}>{line}</p>)}
-        </div>
-        <div className="flex-1 flex items-center justify-center">
             <button 
                 onClick={handleExecuteTurn} 
                 disabled={!isMyTurn}
