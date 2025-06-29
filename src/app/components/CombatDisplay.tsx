@@ -160,7 +160,7 @@ export default function CombatDisplay() {
                   skill={skill}
                   canAfford={canAffordSkill(skill)}
                   cooldown={cooldown}
-                  //isQueued={hasQueued}
+                  isQueued={hasQueued}
                   onClick={() => {
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);
