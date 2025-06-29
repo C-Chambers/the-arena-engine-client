@@ -1,15 +1,16 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useGame } from '../context/GameContext';
-import { jwtDecode } from 'jwt-decode'; // Import the JWT decoding library
+import { useState, useEffect } from 'react';
+import jwtDecode from 'jwt-decode';
 
-// Define a type for our JWT payload to access the user's admin status
 interface JwtPayload {
   user: {
-    is_admin: boolean;
+    is_admin?: boolean;
+    [key: string]: any;
   };
+  [key: string]: any;
 }
 
 const navItems = [
@@ -22,7 +23,7 @@ const navItems = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { connectAndFindMatch, statusMessage } = useGame();
+  const { connectAndFindMatch, cancelQueue, isQueueing, statusMessage } = useGame();
   const [isAdmin, setIsAdmin] = useState(false); // State to track admin status
 
   useEffect(() => {
@@ -54,14 +55,13 @@ export default function Sidebar() {
         <ul>
           <li className="mb-4">
             <button
-              onClick={connectAndFindMatch}
+              onClick={isQueueing ? cancelQueue : connectAndFindMatch}
               className={`flex items-center p-3 rounded-lg w-full text-left transition-colors text-gray-300 hover:bg-gray-700 hover:text-white`}
             >
-              <span className="mr-3 text-lg">▶️</span>
-              <span>Play</span>
+              <span className="mr-3 text-lg">{isQueueing ? '⏹️' : '▶️'}</span>
+              <span>{isQueueing ? 'Cancel Queue' : 'Play'}</span>
             </button>
           </li>
-          
           {navItems.map((item) => (
             <li key={item.name} className="mb-2">
               <a
@@ -84,24 +84,22 @@ export default function Sidebar() {
 
       <div>
         {/* --- NEW: Conditionally render the Admin Dashboard link --- */}
-        {isAdmin && (
-           <a
+          {isAdmin && (
+              <a
             href="/adminDashboard" // Corrected the path to match your folder name
             className="w-full flex items-center p-3 mb-2 rounded-lg text-gray-300 bg-red-800 bg-opacity-50 hover:bg-red-700 hover:text-white transition-colors"
-          >
+              >
             <span className="mr-3 text-lg">⚙️</span>
             <span>Admin Dashboard</span>
-          </a>
-        )}
+              </a>
+          )}
 
-        <button
-          onClick={handleLogout}
-          className="w-full flex items-center p-3 rounded-lg text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-        >
-          <span className="mr-3 text-lg">🚪</span>
-          <span>Logout</span>
-        </button>
-      </div>
+      <button
+        onClick={handleLogout}
+        className="mt-8 bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-4 rounded-lg"
+      >
+        Logout
+      </button>
     </aside>
   );
 }

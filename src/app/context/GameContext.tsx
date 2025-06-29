@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -8,6 +8,8 @@ interface GameState {
   gameState: any;
   setGameState: (state: any) => void;
   connectAndFindMatch: () => void;
+  cancelQueue: () => void;
+  isQueueing: boolean;
   socket: React.RefObject<WebSocket | null>;
   statusMessage: string;
   postGameStats: any; // To hold post-game data
@@ -15,20 +17,27 @@ interface GameState {
 
 const GameContext = createContext<GameState | undefined>(undefined);
 
-// Add this helper function near the top of your file, before your component definition.
+export function useGame() {
+  const context = useContext(GameContext);
+  if (!context) {
+    throw new Error('useGame must be used within a GameProvider');
+  }
+  return context;
+}
+
 function formatSeconds(seconds: number): string {
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-export function GameProvider({ children }: { children: ReactNode }) {
+export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [gameState, setGameState] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [postGameStats, setPostGameStats] = useState<any>(null);
   const socket = useRef<WebSocket | null>(null);
   const router = useRouter();
-
+  const [isQueueing, setIsQueueing] = useState(false);
 
   const handleGameEnd = async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
@@ -56,6 +65,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     setStatusMessage('Connecting to server...');
+    setIsQueueing(true);
+
     const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}?token=${token}`);
     socket.current = ws;
 
@@ -68,6 +79,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         // --- NEW: Store our player ID in localStorage ---
         localStorage.setItem('myId', data.yourId);
         setGameState(data.state);
+        setIsQueueing(false);
         router.push('/battle');
       } else if (data.type === 'GAME_UPDATE') {
         setGameState(data.state);
@@ -76,30 +88,46 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       } else if (data.type === 'OPPONENT_DISCONNECTED') {
         alert("Opponent has disconnected. Returning to dashboard.");
+        setIsQueueing(false);
         router.push('/dashboard');
       } else if (data.type === 'ERROR') {
         setStatusMessage(`Error: ${data.message}`);
+        setIsQueueing(false);
         ws.close();
       }
     };
     ws.onclose = () => {
       setStatusMessage('Disconnected.');
       socket.current = null;
+      setIsQueueing(false);
     };
-    ws.onerror = () => setStatusMessage('Connection Error.');
+    ws.onerror = () => {
+      setStatusMessage('Connection Error.');
+      setIsQueueing(false);
+    };
+  };
+
+  const cancelQueue = () => {
+    if (socket.current) {
+      socket.current.close();
+      socket.current = null;
+    }
+    setStatusMessage('');
+    setIsQueueing(false);
   };
 
   return (
-    <GameContext.Provider value={{ gameState, setGameState, connectAndFindMatch, socket, statusMessage, postGameStats }}>
+    <GameContext.Provider value={{
+      gameState,
+      setGameState,
+      connectAndFindMatch,
+      cancelQueue,
+      isQueueing,
+      socket,
+      statusMessage,
+      postGameStats
+    }}>
       {children}
     </GameContext.Provider>
   );
-}
-
-export function useGame() {
-  const context = useContext(GameContext);
-  if (context === undefined) {
-    throw new Error('useGame must be used within a GameProvider');
-  }
-  return context;
-}
+};
