@@ -23,12 +23,10 @@ const navItems = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  // Only change: add cancelQueue and isQueueing from useGame
   const { connectAndFindMatch, cancelQueue, isQueueing, statusMessage } = useGame();
-  const [isAdmin, setIsAdmin] = useState(false); // State to track admin status
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Check the user's token for admin status when the component mounts
     const token = localStorage.getItem('arena-token');
     if (token) {
       try {
@@ -55,7 +53,6 @@ export default function Sidebar() {
       <nav className="flex-grow">
         <ul>
           <li className="mb-4">
-            {/* Only modification: make the Play button become Cancel Queue if isQueueing */}
             <button
               onClick={isQueueing ? cancelQueue : connectAndFindMatch}
               className={`flex items-center p-3 rounded-lg w-full text-left transition-colors text-gray-300 hover:bg-gray-700 hover:text-white`}
@@ -84,17 +81,16 @@ export default function Sidebar() {
         <p className="text-gray-400 text-sm animate-pulse">{statusMessage}</p>
       </div>
 
-      <div>
-        {/* --- NEW: Conditionally render the Admin Dashboard link --- */}
-          {isAdmin && (
-              <a
-            href="/adminDashboard" // Corrected the path to match your folder name
-            className="w-full flex items-center p-3 mb-2 rounded-lg text-gray-300 bg-red-800 bg-opacity-50 hover:bg-red-700 hover:text-white transition-colors"
-              >
-            <span className="mr-3 text-lg">⚙️</span>
-            <span>Admin Dashboard</span>
-              </a>
-          )}
+      {/* Only render the admin dashboard link if the user is admin */}
+      {isAdmin && (
+        <a
+          href="/adminDashboard"
+          className="w-full flex items-center p-3 mb-2 rounded-lg text-gray-300 bg-red-800 bg-opacity-50 hover:bg-red-700 hover:text-white transition-colors"
+        >
+          <span className="mr-3 text-lg">⚙️</span>
+          <span>Admin Dashboard</span>
+        </a>
+      )}
 
       <button
         onClick={handleLogout}
