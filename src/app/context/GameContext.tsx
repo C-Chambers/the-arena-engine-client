@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useRef, useState } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -17,23 +17,14 @@ interface GameState {
 
 const GameContext = createContext<GameState | undefined>(undefined);
 
-export function useGame() {
-  const context = useContext(GameContext);
-  if (!context) {
-    throw new Error('useGame must be used within a GameProvider');
-  }
-  return context;
-}
-
-// Fix: Default to 0 if seconds is falsy or not a valid number
+  // Fix: Default to 0 if seconds is falsy or not a valid number
 function formatSeconds(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) seconds = 0;
   const mins = Math.floor(seconds / 60);
   const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
-
-export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [postGameStats, setPostGameStats] = useState<any>(null);
@@ -44,7 +35,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleGameEnd = async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings/me`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings`, {
         headers: { 'x-auth-token': token },
       });
       setPostGameStats({ finalState: finalGameState, newRating: response.data });
@@ -78,10 +69,8 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.type === 'STATUS') {
         setStatusMessage(`In ${data.queue} queue... Time in queue: ${formatSeconds(data.timeInQueue)}`);
       } else if (data.type === 'GAME_START') {
-        // --- NEW: Store our player ID in localStorage ---
         localStorage.setItem('myId', data.yourId);
         setGameState(data.state);
-        setIsQueueing(false);
         router.push('/battle');
       } else if (data.type === 'GAME_UPDATE') {
         setGameState(data.state);
@@ -90,11 +79,9 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       } else if (data.type === 'OPPONENT_DISCONNECTED') {
         alert("Opponent has disconnected. Returning to dashboard.");
-        setIsQueueing(false);
         router.push('/dashboard');
       } else if (data.type === 'ERROR') {
         setStatusMessage(`Error: ${data.message}`);
-        setIsQueueing(false);
         ws.close();
       }
     };
@@ -132,4 +119,12 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
       {children}
     </GameContext.Provider>
   );
-};
+}
+
+export function useGame() {
+  const context = useContext(GameContext);
+  if (context === undefined) {
+    throw new Error('useGame must be used within a GameProvider');
+  }
+  return context;
+}

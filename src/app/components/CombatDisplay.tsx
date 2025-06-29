@@ -1,43 +1,50 @@
-'use client';
+'use client'; 
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Character, Skill } from '../types';
 import CharacterCard from './CharacterCard';
 import SkillButton from './SkillButton';
-import { useGame } from '../context/GameContext';
+import { useGame } from '../context/GameContext'; // Import useGame to get the socket
 
 export default function CombatDisplay() {
-  // Use websocket from GameContext instead of creating a new one here
-  const { gameState, socket, statusMessage } = useGame();
-
+  // Use the global gameState and socket from our context
+  const { gameState, socket } = useGame();
+  
+  const [myId, setMyId] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
 
   useEffect(() => {
-  setSelectedSkill(null);
-  setSelectedCaster(null);
-    }, [gameState.activePlayerId]);
+    // Get our ID from localStorage when the component mounts
+    const storedId = localStorage.getItem('myId');
+    setMyId(storedId);
+  }, []);
 
-  const myId = typeof window !== 'undefined' ? localStorage.getItem('myId') : null;
+  // When the gameState updates from the server, reset local selections
+  useEffect(() => {
+    setSelectedSkill(null);
+    setSelectedCaster(null);
+  }, [gameState?.turn]); // This effect triggers every time the turn number changes
 
-  if (!gameState) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <div className="bg-gray-700 p-8 rounded-lg shadow-xl text-center">
-          <h2 className="text-2xl font-bold mb-4">Game Status</h2>
-          <p className="text-xl animate-pulse">{statusMessage}</p>
-        </div>
-      </div>
-    );
+
+  const handleUseSkill = (targetId: string) => {
+    if (socket.current && selectedSkill && selectedCaster) {
+      socket.current.send(JSON.stringify({ 
+        type: 'USE_SKILL', 
+        payload: { skill: selectedSkill, casterId: selectedCaster, targetId: targetId } 
+      }));
+    }
+  };
+  
+  // We use the gameState from context now, so no need for the "waiting" screen here.
+  if (!gameState || !myId) {
+    return <div className="text-white">Loading Game...</div>;
   }
 
-  const myPlayer = myId ? gameState.players[myId] : undefined;
-  const opponentPlayer = myId
-    ? gameState.players[Object.keys(gameState.players).find(id => id !== myId)!]
-    : undefined;
-  const isMyTurn = myId ? gameState.activePlayerId == myId : false;
-  console.log(`My turn? ${isMyTurn} - my id: ${myId} -  playerId turn: ${gameState.activePlayerId}` );
-
+  const myPlayer = gameState.players[myId];
+  const opponentPlayer = gameState.players[Object.keys(gameState.players).find(id => id !== myId)!];
+  const isMyTurn = gameState.activePlayerId === parseInt(myId, 10);
+  
   const canAffordSkill = (skill: Skill) => {
     if (!myPlayer || !myPlayer.chakra) return false;
     for (const type in skill.cost) {
@@ -46,24 +53,12 @@ export default function CombatDisplay() {
     return true;
   };
 
-  // Use socket from context instead of creating a new one
-  const handleUseSkill = (targetId: string) => {
-    if (socket.current && selectedSkill && selectedCaster) {
-      socket.current.send(
-        JSON.stringify({
-          type: 'USE_SKILL',
-          payload: { skill: selectedSkill, casterId: selectedCaster, targetId: targetId },
-        })
-      );
-    }
-  };
-
   if (gameState.isGameOver) {
     return (
-      <div className="text-center">
-        <h2 className="text-4xl font-bold mb-4">Game Over!</h2>
-        <p className="text-2xl">{gameState.log[gameState.log.length - 1]}</p>
-      </div>
+        <div className="text-center text-white">
+            <h2 className="text-4xl font-bold mb-4">Game Over!</h2>
+            <p className="text-2xl">{gameState.log[gameState.log.length - 1]}</p>
+        </div>
     );
   }
 
@@ -71,16 +66,15 @@ export default function CombatDisplay() {
     <div className="w-full h-full flex flex-col gap-4">
       {/* Opponent's Team */}
       <div className="flex gap-4">
-        {opponentPlayer &&
-          opponentPlayer.team.map((char: Character) => (
-            <div key={char.instanceId} className="flex-1">
+        {opponentPlayer.team.map((char: Character) => (
+          <div key={char.instanceId} className="flex-1">
             <CharacterCard 
               character={char} 
               isPlayer={false} 
               onClick={selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
             />
-            </div>
-          ))}
+          </div>
+        ))}
       </div>
 
       {/* Turn Indicator */}
@@ -102,26 +96,26 @@ export default function CombatDisplay() {
           </div>
           <div className="flex-1 flex gap-2">
             {char.skills.map((skill: Skill) => (
-                    <SkillButton
+              <SkillButton 
                 key={skill.id}
-                      skill={skill}
+                skill={skill}
                 canAfford={canAffordSkill(skill) && isMyTurn && char.isAlive}
                 onClick={() => {
                   setSelectedSkill(skill);
                   setSelectedCaster(char.instanceId);
                 }}
-                    />
-                  ))}
-              </div>
-            </div>
-          ))}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
       
       {/* Resources and Log */}
       <div className="flex gap-4 mt-auto">
         <div className="w-1/3 bg-gray-900 p-3 rounded-lg">
             <h4 className="font-bold text-lg mb-1">Your Chakra</h4>
             <p className="font-mono text-purple-300">{JSON.stringify(myPlayer.chakra)}</p>
-          </div>
+        </div>
         <div className="w-2/3 bg-gray-900 p-3 rounded-lg font-mono text-xs overflow-y-auto h-24">
             <h4 className="font-bold">Game Log:</h4>
             {gameState.log.slice().reverse().map((line: string, i: number) => <p key={i}>{line}</p>)}
