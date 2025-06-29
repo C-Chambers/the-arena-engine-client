@@ -19,7 +19,6 @@ export default function CombatDisplay() {
   }, []);
 
   useEffect(() => {
-    // When the game state updates (i.e., a new turn starts), reset selections
     setSelectedSkill(null);
     setSelectedCaster(null);
   }, [gameState?.turn]);
@@ -74,7 +73,8 @@ export default function CombatDisplay() {
             <CharacterCard 
               character={char} 
               isPlayer={false} 
-              onClick={selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
+              // --- FIX: Ensure a valid function is always passed when clickable ---
+              onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleUseSkill(char.instanceId) : undefined}
             />
           </div>
         ))}
@@ -94,7 +94,8 @@ export default function CombatDisplay() {
                 character={char} 
                 isPlayer={true} 
                 isSelected={selectedCaster === char.instanceId}
-                onClick={selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
+                // --- FIX: Allow targeting self/allies ---
+                onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleUseSkill(char.instanceId) : undefined}
             />
           </div>
           <div className="flex-1 flex gap-2">
