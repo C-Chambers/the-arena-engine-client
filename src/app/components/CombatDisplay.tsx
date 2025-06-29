@@ -72,7 +72,7 @@ export default function CombatDisplay() {
             <CharacterCard 
               character={char} 
               isPlayer={false} 
-              onClick={selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
+              onClick={console.log(`skill? ${selectedSkill} - my turn? ${isMyTurn} -  caster: ${selectedCaster}` ); selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
             />
           </div>
         ))}
