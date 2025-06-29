@@ -24,7 +24,7 @@ export default function CombatDisplay() {
 
   // When a new turn starts, clear local state
   useEffect(() => {
-    console.log(`%cTURN ${turn}: State updated. Resetting skill selection.`, 'color: yellow; font-weight: bold;');
+    console.log(`%cTURN ${gameState.turn}: State updated. Resetting skill selection.`, 'color: yellow; font-weight: bold;');
     setSelectedSkill(null);
     setSelectedCaster(null);
     setErrorMsg(''); // Clear any old errors from the context
