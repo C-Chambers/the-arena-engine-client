@@ -55,7 +55,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'STATUS') {
-        setStatusMessage(data.message);
+        setStatusMessage(`In ${data.queue} queue... Time in queue: ${formatSeconds(data.timeInQueue)}`);
       } else if (data.type === 'GAME_START') {
         // --- NEW: Store our player ID in localStorage ---
         localStorage.setItem('myId', data.yourId);
