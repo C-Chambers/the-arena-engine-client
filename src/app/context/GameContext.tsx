@@ -11,8 +11,8 @@ interface GameContextState {
   socket: React.RefObject<WebSocket | null>;
   statusMessage: string;
   postGameStats: any;
-  errorMsg: string; // NEW: Add error state to the context
-  setErrorMsg: (msg: string) => void; // NEW: Add a setter for the error
+  errorMsg: string;
+  setErrorMsg: (msg: string) => void;
 }
 
 const GameContext = createContext<GameContextState | undefined>(undefined);
@@ -21,7 +21,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [postGameStats, setPostGameStats] = useState<any>(null);
-  const [errorMsg, setErrorMsg] = useState(''); // NEW
+  const [errorMsg, setErrorMsg] = useState('');
   const socket = useRef<WebSocket | null>(null);
   const router = useRouter();
 
@@ -56,7 +56,6 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
     ws.onopen = () => setStatusMessage('Connected! Waiting for an opponent...');
     
-    // --- This is now the ONLY onmessage handler ---
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'STATUS') {
@@ -92,7 +91,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const contextValue = { 
       gameState, setGameState, connectAndFindMatch, 
       socket, statusMessage, postGameStats,
-      errorMsg, setErrorMsg // NEW: Provide error state to consumers
+      errorMsg, setErrorMsg
   };
 
   return (

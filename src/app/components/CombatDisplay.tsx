@@ -8,7 +8,6 @@ import { useGame } from '../context/GameContext';
 import SkillStack from './SkillStack'; 
 
 export default function CombatDisplay() {
-  // Get everything from the game context
   const { gameState, socket, errorMsg, setErrorMsg } = useGame();
   
   const [myId, setMyId] = useState<string | null>(null);
@@ -22,19 +21,22 @@ export default function CombatDisplay() {
     }
   }, []);
 
-  // When a new turn starts, clear local state
+  // --- THIS IS THE CRITICAL FIX ---
+  // This effect runs every time the game's turn number changes.
+  // It resets the local state, ensuring the component is ready for the new turn.
   useEffect(() => {
-    console.log(`%cTURN ${gameState.turn}: State updated. Resetting skill selection.`, 'color: yellow; font-weight: bold;');
+    const turn = gameState ? gameState.turn : 'N/A';
+    // DEBUG LOG 1: Check if the turn change is detected
+    console.log(`%cTURN ${turn}: State updated. Resetting local skill selection.`, 'color: yellow; font-weight: bold;');
     setSelectedSkill(null);
     setSelectedCaster(null);
-    setErrorMsg(''); // Clear any old errors from the context
+    setErrorMsg('');
   }, [gameState?.turn, setErrorMsg]);
 
-  // The conflicting onmessage handler has been REMOVED from here.
 
+  // Action handlers for the Skill Stack system
   const handleQueueSkill = (targetId: string) => {
     const skillName = selectedSkill ? selectedSkill.name : 'Unknown Skill';
-    // DEBUG LOG 4: Confirm this function is called
     console.log(`%cHANDLE QUEUE SKILL: Sending skill ${skillName} on target ${targetId}`, 'color: cyan');
     if (socket.current && selectedSkill && selectedCaster) {
       const casterChar = gameState.players[myId!].team.find((c: Character) => c.instanceId === selectedCaster);
@@ -45,7 +47,6 @@ export default function CombatDisplay() {
       setSelectedSkill(null);
       setSelectedCaster(null);
     }
-    console.log(`%c SKILL ADDED TO QUEUE. CHECKING FOR NULL:  skill ${selectedSkill} caster ${selectedCaster}`, 'color: cyan');
   };
 
   const handleDequeueSkill = (index: number) => {
@@ -68,8 +69,14 @@ export default function CombatDisplay() {
   };
   
   if (!gameState || !myId) {
-    // This part should rarely be seen now, as redirection happens in context
-    return <div className="text-white text-center">Loading Game...</div>;
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="bg-gray-700 p-8 rounded-lg shadow-xl text-center">
+            <h2 className="text-2xl font-bold mb-4 text-white">Game Status</h2>
+            <p className="text-xl text-white animate-pulse">Waiting for game to start...</p>
+        </div>
+      </div>
+    );
   }
 
   const myPlayer = gameState.players[myId];
@@ -95,9 +102,6 @@ export default function CombatDisplay() {
               character={char} 
               isPlayer={false} 
               onClick={() => {
-                  const skillIsSelected = !!selectedSkill;
-                  // DEBUG LOG 3: Check if clicking the opponent does anything
-                  console.log(`%cTARGET CLICKED: Opponent ${char.name}. Conditions: selectedSkill=${skillIsSelected}, isMyTurn=${isMyTurn}, isAlive=${char.isAlive}`, 'color: lightgreen');
                   if (selectedSkill && isMyTurn && char.isAlive) {
                       handleQueueSkill(char.instanceId);
                   }
@@ -123,8 +127,6 @@ export default function CombatDisplay() {
                 isPlayer={true} 
                 isSelected={selectedCaster === char.instanceId}
                 onClick={() => {
-                  const skillIsSelected = !!selectedSkill;
-                  console.log(`%cTARGET CLICKED: Ally ${char.name}. Conditions: selectedSkill=${skillIsSelected}, isMyTurn=${isMyTurn}, isAlive=${char.isAlive}`, 'color: lightblue');
                   if (selectedSkill && isMyTurn && char.isAlive) {
                     handleQueueSkill(char.instanceId);
                   }
@@ -139,12 +141,10 @@ export default function CombatDisplay() {
                 <SkillButton 
                   key={skill.id}
                   skill={skill}
-                  canAfford={true}
+                  canAfford={true} // Chakra cost is validated on the server for the whole queue
                   cooldown={cooldown}
                   isQueued={hasQueued}
                   onClick={() => {
-                    // DEBUG LOG 2: Check if clicking a skill sets the state
-                    console.log(`%cSKILL BUTTON CLICKED: Setting selectedSkill to ${skill.name}`, 'color: pink');
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);
                   }}
