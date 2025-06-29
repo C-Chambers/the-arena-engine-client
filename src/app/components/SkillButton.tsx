@@ -5,7 +5,7 @@ import { Skill } from '../types';
 interface SkillButtonProps {
   skill: Skill;
   canAfford: boolean;
-  cooldown: number; // NEW: The number of turns remaining on the cooldown
+  cooldown: number; // The number of turns remaining on the cooldown
   onClick: () => void;
 }
 
@@ -15,7 +15,7 @@ export default function SkillButton({ skill, canAfford, cooldown, onClick }: Ski
   return (
     <button
       onClick={onClick}
-      // A skill is disabled if it's on cooldown OR the player can't afford it
+      // A skill is now disabled if it's on cooldown OR the player can't afford it
       disabled={!canAfford || isOnCooldown}
       className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-sm text-center disabled:bg-gray-500 disabled:cursor-not-allowed hover:enabled:bg-blue-700 transition-colors relative"
       title={skill.description}
