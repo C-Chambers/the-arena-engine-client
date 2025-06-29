@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '../components/AdminSidebar';
-import { jwtDecode } from 'jwt-decode'; // We'll need a library to decode the token
+import { jwt_decode } from 'jwt-decode'; // We'll need a library to decode the token
 
 // Define a type for our JWT payload
 interface JwtPayload {
