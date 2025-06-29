@@ -146,6 +146,8 @@ export default function AdminSkillsPage() {
               <th className="p-2">Name</th>
               <th className="p-2">Owner</th>
               <th className="p-2">Class</th>
+              <th className="p-2">Range</th>
+              <th className="p-2">Persistence</th>
               <th className="p-2">Actions</th>
             </tr>
           </thead>
@@ -156,6 +158,8 @@ export default function AdminSkillsPage() {
                 <td className="p-2 font-semibold text-blue-300">{skill.name}</td>
                 <td className="p-2">{skill.character_name}</td>
                 <td className="p-2 text-gray-400">{skill.skill_class}</td>
+                <td className="p-2 text-gray-400">{skill.skill_range}</td>
+                <td className="p-2 text-gray-400">{skill.skill_persistence}</td>
                 <td className="p-2">
                   <button className="text-red-500 hover:text-red-400">Delete</button>
                 </td>
