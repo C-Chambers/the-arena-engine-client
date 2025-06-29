@@ -33,7 +33,7 @@ export default function CombatDisplay() {
     };
     ws.onclose = () => setStatusMessage('--- Disconnected from server ---');
     ws.onerror = () => setStatusMessage('--- WebSocket Error ---');
-    return () => { ws.close(); };
+    //return () => { ws.close(); };
   }, []);
 
   const handleUseSkill = (targetId: string) => {
