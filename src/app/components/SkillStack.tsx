@@ -50,6 +50,7 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
 
     // --- NEW: Logic to handle dragging out of the container ---
     // If 'over' is null, it means the item was dropped outside a valid target.
+    console.log(`active: ${active}, over: ${over}`);
     if (active && !over) {
       const oldIndex = queue.findIndex(item => item.skill.id === active.id);
       onRemove(oldIndex);
