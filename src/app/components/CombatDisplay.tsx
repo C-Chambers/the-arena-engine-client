@@ -20,7 +20,7 @@ export default function CombatDisplay() {
 
   useEffect(() => {
     // DEBUG LOG 1: Check if the turn change is detected
-    console.log('TURN', gameState?.turn:, ' State updated. Resetting skill selection.');
+    console.log('TURN:', gameState?.turn, ', State updated. Resetting skill selection.');
     setSelectedSkill(null);
     setSelectedCaster(null);
   }, [gameState?.turn]);
