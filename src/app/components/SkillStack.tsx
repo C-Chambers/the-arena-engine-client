@@ -1,13 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-// --- NEW: Import 'useDroppable' ---
-import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, rectIntersection, useDroppable } from '@dnd-kit/core';
+// --- CHANGED: Import 'closestCenter' instead of 'rectIntersection' ---
+import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, useDroppable, closestCenter } from '@dnd-kit/core';
 import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Image from 'next/image';
 
-// This component's code remains unchanged.
 function SkillItem({ action }: { action: any }) {
     return (
         <div className="w-16 h-16 bg-gray-700 rounded-md border-2 border-blue-500 flex items-center justify-center text-white font-bold text-xs p-1 text-center">
@@ -20,7 +19,6 @@ function SkillItem({ action }: { action: any }) {
     );
 }
 
-// This component's code remains unchanged.
 function SortableSkill({ action }: { action: any }) {
   const {
     attributes,
@@ -44,13 +42,11 @@ function SortableSkill({ action }: { action: any }) {
   );
 }
 
-
 // The main SkillStack component
 export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[], onReorder: (oldIndex: number, newIndex: number) => void, onRemove: (index: number) => void }) {
   const [activeAction, setActiveAction] = useState<any | null>(null);
   const [removingId, setRemovingId] = useState<any | null>(null);
   
-  // --- NEW: Register the component itself as a droppable area ---
   const { setNodeRef } = useDroppable({
     id: 'skill-stack-container',
   });
@@ -78,11 +74,8 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
     const { active, over } = event;
     setActiveAction(null);
 
-    // If 'over' is null, it means the item was dropped outside of ALL droppable areas
-    // (i.e., outside the skill stack container). This is now the ONLY condition for removal.
     if (active && !over) {
       setRemovingId(active.id);
-
       const oldIndex = queue.findIndex(item => item.skill.id === active.id);
       if (oldIndex > -1) {
         onRemove(oldIndex);
@@ -90,11 +83,7 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
       return;
     }
 
-    // Handle reordering if dropped on another skill item.
-    // If dropped on the container itself ('skill-stack-container'), this condition will be false
-    // for `over.id`, and nothing will happen, which is the desired behavior.
     if (over && active.id !== over.id) {
-        // Check if the target is a skill and not the container
         if (queue.some(item => item.skill.id === over.id)) {
             setRemovingId(null);
             const oldIndex = queue.findIndex(item => item.skill.id === active.id);
@@ -105,12 +94,12 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
   }
 
   return (
-    // --- CHANGED: Apply the droppable ref to the main container div ---
     <div ref={setNodeRef} className="bg-gray-900 p-4 rounded-lg">
       <h3 className="text-lg font-semibold mb-3 text-center">Skill Stack</h3>
       <DndContext 
         sensors={sensors} 
-        collisionDetection={rectIntersection} 
+        // --- THE FIX: Use 'closestCenter' for more accurate collision detection in this layout ---
+        collisionDetection={closestCenter} 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
       >
