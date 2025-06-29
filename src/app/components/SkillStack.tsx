@@ -6,7 +6,8 @@ import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable 
 import { CSS } from '@dnd-kit/utilities';
 import Image from 'next/image';
 
-// This is a new, separate component for the item being dragged
+// This is a new, separate component for the item's visual representation.
+// It will be used for both the static item in the list and the floating overlay.
 function SkillItem({ action }: { action: any }) {
     return (
         <div className="w-16 h-16 bg-gray-700 rounded-md border-2 border-blue-500 flex items-center justify-center text-white font-bold text-xs p-1 text-center">
@@ -28,11 +29,14 @@ function SortableSkill({ action }: { action: any }) {
     setNodeRef,
     transform,
     transition,
+    isDragging, // dnd-kit provides this to know when an item is being dragged
   } = useSortable({ id: action.skill.id });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    // --- FIX: Hide the original item while it's being dragged ---
+    opacity: isDragging ? 0 : 1,
   };
 
   return (
@@ -54,6 +58,7 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
 
   function handleDragStart(event: any) {
     const { active } = event;
+    // Store the full action object of the item being dragged
     const action = queue.find(item => item.skill.id === active.id);
     setActiveAction(action);
   }
@@ -62,7 +67,7 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
     const { active, over } = event;
     setActiveAction(null); // Clear the active item after drag ends
 
-    // This logic should now work correctly with the new collision strategy.
+    // If 'over' is null, the item was dropped outside a valid target.
     if (active && !over) {
       const oldIndex = queue.findIndex(item => item.skill.id === active.id);
       if (oldIndex > -1) {
@@ -71,6 +76,7 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
       return;
     }
 
+    // Handle reordering
     if (over && active.id !== over.id) {
       const oldIndex = queue.findIndex(item => item.skill.id === active.id);
       const newIndex = queue.findIndex(item => item.skill.id === over.id);
@@ -83,7 +89,6 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
       <h3 className="text-lg font-semibold mb-3 text-center">Skill Stack</h3>
       <DndContext 
         sensors={sensors} 
-        // --- UPDATED: Switched to rectIntersection for collision detection ---
         collisionDetection={rectIntersection} 
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
