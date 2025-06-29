@@ -30,7 +30,7 @@ export default function CombatDisplay() {
   const opponentPlayer = myId
     ? gameState.players[Object.keys(gameState.players).find(id => id !== myId)!]
     : undefined;
-  const isMyTurn = myId ? gameState.activePlayerId === myId : false;
+  const isMyTurn = myId ? gameState.activePlayerId == myId : false;
   console.log(`My turn? ${isMyTurn} - my id: ${myId} -  playerId turn: ${gameState.activePlayerId}` );
 
   const canAffordSkill = (skill: Skill) => {
