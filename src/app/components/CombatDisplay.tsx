@@ -13,6 +13,11 @@ export default function CombatDisplay() {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
 
+  useEffect(() => {
+  setSelectedSkill(null);
+  setSelectedCaster(null);
+    }, [gameState.activePlayerId]);
+
   const myId = typeof window !== 'undefined' ? localStorage.getItem('myId') : null;
 
   if (!gameState) {
