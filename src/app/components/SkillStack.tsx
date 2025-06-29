@@ -30,11 +30,11 @@ function SortableSkill({ action, onRemove }: { action: any, onRemove: () => void
         )}
       </div>
       {/* --- NEW: The clickable "X" button --- */}
-      <button 
+      <button
         onClick={(e) => {
             e.stopPropagation(); // Prevent the drag event from firing when clicking the button
             onRemove();
-        }} 
+        }}
         className="absolute -top-2 -right-2 bg-red-600 text-white rounded-full w-5 h-5 text-xs font-bold flex items-center justify-center border-2 border-gray-900 hover:bg-red-500"
         aria-label="Remove skill"
       >
