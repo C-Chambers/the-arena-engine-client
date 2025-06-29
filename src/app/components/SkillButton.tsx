@@ -6,7 +6,7 @@ interface SkillButtonProps {
   skill: Skill;
   canAfford: boolean;
   cooldown: number;
-  isQueued: boolean; // NEW: Added the isQueued prop
+  isQueued: boolean; // This prop tells the button if its character has already acted
   onClick: () => void;
 }
 
@@ -16,7 +16,7 @@ export default function SkillButton({ skill, canAfford, cooldown, isQueued, onCl
   return (
     <button
       onClick={onClick}
-      // A skill is now disabled if it's on cooldown, the player can't afford it, OR the character has already queued a skill
+      // A skill is now disabled if its character has already queued a skill, it's on cooldown, or the player can't afford it.
       disabled={!canAfford || isOnCooldown || isQueued}
       className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-sm text-center disabled:bg-gray-500 disabled:cursor-not-allowed hover:enabled:bg-blue-700 transition-colors relative"
       title={skill.description}
