@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import AdminSidebar from '../components/AdminSidebar';
-import jwt_decode from 'jwt-decode'; // We'll need a library to decode the token
+import { jwtDecode } from 'jwt-decode'; // We'll need a library to decode the token
 
 // Define a type for our JWT payload
 interface JwtPayload {
@@ -31,7 +31,7 @@ export default function AdminLayout({
     }
     
     try {
-      const decodedToken = jwt_decode<JwtPayload>(token);
+      const decodedToken = jwtDecode<JwtPayload>(token);
       if (decodedToken.user && decodedToken.user.is_admin) {
         setIsAdmin(true); // User is an admin, allow access
       } else {

@@ -3,7 +3,7 @@
 import { useRouter, usePathname } from 'next/navigation';
 import { useGame } from '../context/GameContext';
 import { useState, useEffect } from 'react';
-import jwt_decode from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 
 interface JwtPayload {
   user: {
@@ -30,7 +30,7 @@ export default function Sidebar() {
     const token = localStorage.getItem('arena-token');
     if (token) {
       try {
-        const decodedToken = jwt_decode<JwtPayload>(token);
+        const decodedToken = jwtDecode<JwtPayload>(token);
         if (decodedToken.user && decodedToken.user.is_admin) {
           setIsAdmin(true);
         }
