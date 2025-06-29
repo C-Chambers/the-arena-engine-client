@@ -23,6 +23,7 @@ const navItems = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
+  // Only change: add cancelQueue and isQueueing from useGame
   const { connectAndFindMatch, cancelQueue, isQueueing, statusMessage } = useGame();
   const [isAdmin, setIsAdmin] = useState(false); // State to track admin status
 
@@ -54,6 +55,7 @@ export default function Sidebar() {
       <nav className="flex-grow">
         <ul>
           <li className="mb-4">
+            {/* Only modification: make the Play button become Cancel Queue if isQueueing */}
             <button
               onClick={isQueueing ? cancelQueue : connectAndFindMatch}
               className={`flex items-center p-3 rounded-lg w-full text-left transition-colors text-gray-300 hover:bg-gray-700 hover:text-white`}

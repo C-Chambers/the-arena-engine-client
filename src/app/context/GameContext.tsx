@@ -37,6 +37,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [postGameStats, setPostGameStats] = useState<any>(null);
   const socket = useRef<WebSocket | null>(null);
   const router = useRouter();
+  // Only addition: track queue state for Play/Cancel button
   const [isQueueing, setIsQueueing] = useState(false);
 
   const handleGameEnd = async (finalGameState: any) => {
@@ -107,6 +108,7 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
+  // Only addition: allow user to cancel matchmaking queue
   const cancelQueue = () => {
     if (socket.current) {
       socket.current.close();
