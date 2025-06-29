@@ -101,7 +101,7 @@ export default function CombatDisplay() {
           <div className="text-center">
             <p className="mb-2">
               {isMyTurn
-                ? 'Select a target for your skill.'
+                ? 'Select a target for your skill.' 
                 : 'Waiting for your turn...'}
             </p>
             {/* Target selection UI could go here */}
