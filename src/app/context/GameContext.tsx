@@ -4,38 +4,28 @@ import React, { createContext, useContext, useState, ReactNode, useRef } from 'r
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
-interface GameState {
+interface GameContextState {
   gameState: any;
   setGameState: (state: any) => void;
   connectAndFindMatch: () => void;
-  cancelQueue: () => void;
-  isQueueing: boolean;
   socket: React.RefObject<WebSocket | null>;
   statusMessage: string;
-  postGameStats: any; // To hold post-game data
+  postGameStats: any;
 }
 
-const GameContext = createContext<GameState | undefined>(undefined);
+const GameContext = createContext<GameContextState | undefined>(undefined);
 
-  // Fix: Default to 0 if seconds is falsy or not a valid number
-function formatSeconds(seconds: number): string {
-  if (!Number.isFinite(seconds) || seconds < 0) seconds = 0;
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins}:${secs.toString().padStart(2, '0')}`;
-}
-  export function GameProvider({ children }: { children: ReactNode }) {
+export function GameProvider({ children }: { children: ReactNode }) {
   const [gameState, setGameState] = useState<any>(null);
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [postGameStats, setPostGameStats] = useState<any>(null);
   const socket = useRef<WebSocket | null>(null);
   const router = useRouter();
-  const [isQueueing, setIsQueueing] = useState(false);
 
   const handleGameEnd = async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
     try {
-      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings`, {
+      const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings/me`, {
         headers: { 'x-auth-token': token },
       });
       setPostGameStats({ finalState: finalGameState, newRating: response.data });
@@ -58,8 +48,6 @@ function formatSeconds(seconds: number): string {
     }
 
     setStatusMessage('Connecting to server...');
-    setIsQueueing(true);
-
     const ws = new WebSocket(`${process.env.NEXT_PUBLIC_WS_URL}?token=${token}`);
     socket.current = ws;
 
@@ -67,7 +55,7 @@ function formatSeconds(seconds: number): string {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       if (data.type === 'STATUS') {
-        setStatusMessage(`In ${data.queue} queue... Time in queue: ${formatSeconds(data.timeInQueue)}`);
+        setStatusMessage(data.message);
       } else if (data.type === 'GAME_START') {
         localStorage.setItem('myId', data.yourId);
         setGameState(data.state);
@@ -88,34 +76,12 @@ function formatSeconds(seconds: number): string {
     ws.onclose = () => {
       setStatusMessage('Disconnected.');
       socket.current = null;
-      setIsQueueing(false);
     };
-    ws.onerror = () => {
-      setStatusMessage('Connection Error.');
-      setIsQueueing(false);
-    };
-  };
-
-  const cancelQueue = () => {
-    if (socket.current) {
-      socket.current.close();
-      socket.current = null;
-    }
-    setStatusMessage('');
-    setIsQueueing(false);
+    ws.onerror = () => setStatusMessage('Connection Error.');
   };
 
   return (
-    <GameContext.Provider value={{
-      gameState,
-      setGameState,
-      connectAndFindMatch,
-      cancelQueue,
-      isQueueing,
-      socket,
-      statusMessage,
-      postGameStats
-    }}>
+    <GameContext.Provider value={{ gameState, setGameState, connectAndFindMatch, socket, statusMessage, postGameStats }}>
       {children}
     </GameContext.Provider>
   );

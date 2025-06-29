@@ -4,10 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Character, Skill } from '../types';
 import CharacterCard from './CharacterCard';
 import SkillButton from './SkillButton';
-import { useGame } from '../context/GameContext'; // Import useGame to get the socket
+import { useGame } from '../context/GameContext';
 
 export default function CombatDisplay() {
-  // Use the global gameState and socket from our context
   const { gameState, socket } = useGame();
   
   const [myId, setMyId] = useState<string | null>(null);
@@ -15,16 +14,15 @@ export default function CombatDisplay() {
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
 
   useEffect(() => {
-    // Get our ID from localStorage when the component mounts
     const storedId = localStorage.getItem('myId');
     setMyId(storedId);
   }, []);
 
-  // When the gameState updates from the server, reset local selections
   useEffect(() => {
+    // When the game state updates (i.e., a new turn starts), reset selections
     setSelectedSkill(null);
     setSelectedCaster(null);
-  }, [gameState?.turn]); // This effect triggers every time the turn number changes
+  }, [gameState?.turn]);
 
 
   const handleUseSkill = (targetId: string) => {
@@ -35,17 +33,21 @@ export default function CombatDisplay() {
       }));
     }
   };
+
+  const handleEndTurn = () => {
+    if(socket.current) {
+        socket.current.send(JSON.stringify({ type: 'END_TURN' }));
+    }
+  };
   
-  // We use the gameState from context now, so no need for the "waiting" screen here.
   if (!gameState || !myId) {
-    return <div className="text-white">Loading Game...</div>;
+    return <div className="text-white text-center">Loading Game...</div>;
   }
 
   const myPlayer = gameState.players[myId];
   const opponentPlayer = gameState.players[Object.keys(gameState.players).find(id => id !== myId)!];
-  // --- FIX: Ensure both values are treated as numbers for a reliable comparison ---
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
-  console.log(`My turn? ${isMyTurn} - my id: ${myId} -  playerId turn: ${gameState.activePlayerId}` );
+  
   const canAffordSkill = (skill: Skill) => {
     if (!myPlayer || !myPlayer.chakra) return false;
     for (const type in skill.cost) {
@@ -72,8 +74,9 @@ export default function CombatDisplay() {
             <CharacterCard 
               character={char} 
               isPlayer={false} 
-              onClick={console.log(`skill? ${selectedSkill} - my turn? ${isMyTurn} -  caster: ${selectedCaster}` ); selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
+              onClick={selectedSkill && isMyTurn ? () => handleUseSkill(char.instanceId) : undefined}
             />
+          </div>
         ))}
       </div>
 
@@ -116,9 +119,18 @@ export default function CombatDisplay() {
             <h4 className="font-bold text-lg mb-1">Your Chakra</h4>
             <p className="font-mono text-purple-300">{JSON.stringify(myPlayer.chakra)}</p>
         </div>
-        <div className="w-2/3 bg-gray-900 p-3 rounded-lg font-mono text-xs overflow-y-auto h-24">
+        <div className="w-1/2 bg-gray-900 p-3 rounded-lg font-mono text-xs overflow-y-auto h-24">
             <h4 className="font-bold">Game Log:</h4>
             {gameState.log.slice().reverse().map((line: string, i: number) => <p key={i}>{line}</p>)}
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+            <button 
+                onClick={handleEndTurn} 
+                disabled={!isMyTurn}
+                className="w-full h-full bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-4 rounded-lg transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed"
+            >
+                End Turn
+            </button>
         </div>
       </div>
     </div>
