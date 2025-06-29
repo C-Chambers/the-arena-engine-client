@@ -23,7 +23,7 @@ const navItems = [
 export default function Sidebar() {
   const router = useRouter();
   const pathname = usePathname();
-  const { connectAndFindMatch, cancelQueue, isQueueing, statusMessage } = useGame();
+  const { connectAndFindMatch, statusMessage } = useGame();
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
@@ -54,11 +54,11 @@ export default function Sidebar() {
         <ul>
           <li className="mb-4">
             <button
-              onClick={isQueueing ? cancelQueue : connectAndFindMatch}
+              onClick={ connectAndFindMatch}
               className={`flex items-center p-3 rounded-lg w-full text-left transition-colors text-gray-300 hover:bg-gray-700 hover:text-white`}
             >
-              <span className="mr-3 text-lg">{isQueueing ? '⏹️' : '▶️'}</span>
-              <span>{isQueueing ? 'Cancel Queue' : 'Play'}</span>
+              <span className="mr-3 text-lg">{'▶️'}</span>
+              <span>{'Play'}</span>
             </button>
           </li>
           {navItems.map((item) => (
