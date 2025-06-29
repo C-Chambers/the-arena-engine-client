@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay, rectIntersection } from '@dnd-kit/core';
-import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
+import { useState, useEffect } from 'react';
+import { DndContext, PointerSensor, useSensor, useSensors, DragOverlay, rectIntersection } from '@dnd-kit/core';
+import { SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Image from 'next/image';
 
@@ -50,11 +50,23 @@ function SortableSkill({ action }: { action: any }) {
 // The main SkillStack component
 export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[], onReorder: (oldIndex: number, newIndex: number) => void, onRemove: (index: number) => void }) {
   const [activeAction, setActiveAction] = useState<any | null>(null);
+  const [removingId, setRemovingId] = useState<any | null>(null);
+  
   const sensors = useSensors(useSensor(PointerSensor, {
     activationConstraint: {
       distance: 5,
     },
   }));
+  
+  // This effect is a good practice for cleanup. It ensures that if the 
+  // queue prop updates from the parent component, our temporary 'removingId' 
+  // state is cleared, keeping the UI consistent.
+  useEffect(() => {
+    if (removingId && !queue.find(item => item.skill.id === removingId)) {
+        setRemovingId(null);
+    }
+  }, [queue, removingId]);
+
 
   function handleDragStart(event: any) {
     const { active } = event;
@@ -69,6 +81,10 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
 
     // If 'over' is null, the item was dropped outside a valid target.
     if (active && !over) {
+      // By setting the removingId, we trigger an immediate re-render
+      // to hide the item, preventing the "snap back" animation.
+      setRemovingId(active.id);
+
       const oldIndex = queue.findIndex(item => item.skill.id === active.id);
       if (oldIndex > -1) {
         onRemove(oldIndex);
@@ -78,6 +94,8 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
 
     // Handle reordering
     if (over && active.id !== over.id) {
+      // When reordering successfully, ensure we clear any stale removingId
+      setRemovingId(null);
       const oldIndex = queue.findIndex(item => item.skill.id === active.id);
       const newIndex = queue.findIndex(item => item.skill.id === over.id);
       onReorder(oldIndex, newIndex);
@@ -95,9 +113,11 @@ export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[
       >
         <SortableContext items={queue.map(item => item.skill.id)} strategy={horizontalListSortingStrategy}>
           <div className="flex gap-4 items-center justify-center min-h-[80px]">
-            {queue.length > 0 ? queue.map((action) => (
-              <SortableSkill key={action.skill.id} action={action} />
-            )) : (
+            {queue.length > 0 ? queue.map((action) => {
+              // If an item is marked for removal, don't render it.
+              if (action.skill.id === removingId) return null;
+              return <SortableSkill key={action.skill.id} action={action} />
+            }) : (
               <p className="text-gray-500">Click a skill and target to add to the stack.</p>
             )}
           </div>
