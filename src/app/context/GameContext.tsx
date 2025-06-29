@@ -25,9 +25,11 @@ export function useGame() {
   return context;
 }
 
+// Fix: Default to 0 if seconds is falsy or not a valid number
 function formatSeconds(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) seconds = 0;
   const mins = Math.floor(seconds / 60);
-  const secs = seconds % 60;
+  const secs = Math.floor(seconds % 60);
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
@@ -37,7 +39,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [postGameStats, setPostGameStats] = useState<any>(null);
   const socket = useRef<WebSocket | null>(null);
   const router = useRouter();
-  // Only addition: track queue state for Play/Cancel button
   const [isQueueing, setIsQueueing] = useState(false);
 
   const handleGameEnd = async (finalGameState: any) => {
@@ -108,7 +109,6 @@ export const GameProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
   };
 
-  // Only addition: allow user to cancel matchmaking queue
   const cancelQueue = () => {
     if (socket.current) {
       socket.current.close();
