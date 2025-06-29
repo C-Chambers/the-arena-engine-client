@@ -19,12 +19,16 @@ export default function CombatDisplay() {
   }, []);
 
   useEffect(() => {
+    // DEBUG LOG 1: Check if the turn change is detected
+    console.log(`TURN ${gameState?.turn}: State updated. Resetting skill selection.`);
     setSelectedSkill(null);
     setSelectedCaster(null);
   }, [gameState?.turn]);
 
 
   const handleUseSkill = (targetId: string) => {
+    // DEBUG LOG 4: Check if the final skill use handler is called
+    console.log(`HANDLE USE SKILL: Sending skill ${selectedSkill?.name} on target ${targetId}`);
     if (socket.current && selectedSkill && selectedCaster) {
       socket.current.send(JSON.stringify({ 
         type: 'USE_SKILL', 
@@ -34,6 +38,7 @@ export default function CombatDisplay() {
   };
 
   const handleEndTurn = () => {
+    console.log("HANDLE END TURN: Sending END_TURN action.");
     if(socket.current) {
         socket.current.send(JSON.stringify({ type: 'END_TURN' }));
     }
@@ -47,6 +52,9 @@ export default function CombatDisplay() {
   const opponentPlayer = gameState.players[Object.keys(gameState.players).find(id => id !== myId)!];
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
+  // DEBUG LOG 2: Check the component's state on every render
+  console.log(`RENDER CHECK: Turn=${gameState.turn}, IsMyTurn=${isMyTurn}, SelectedSkill=${selectedSkill?.name || 'null'}`);
+
   const canAffordSkill = (skill: Skill) => {
     if (!myPlayer || !myPlayer.chakra) return false;
     for (const type in skill.cost) {
@@ -73,8 +81,13 @@ export default function CombatDisplay() {
             <CharacterCard 
               character={char} 
               isPlayer={false} 
-              // --- FIX: Ensure a valid function is always passed when clickable ---
-              onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleUseSkill(char.instanceId) : undefined}
+              onClick={() => {
+                  // DEBUG LOG 3: Check if clicking the opponent does anything
+                  console.log(`TARGET CLICKED: Opponent ${char.name}. Conditions: selectedSkill=${!!selectedSkill}, isMyTurn=${isMyTurn}, isAlive=${char.isAlive}`);
+                  if (selectedSkill && isMyTurn && char.isAlive) {
+                      handleUseSkill(char.instanceId);
+                  }
+              }}
             />
           </div>
         ))}
@@ -94,8 +107,12 @@ export default function CombatDisplay() {
                 character={char} 
                 isPlayer={true} 
                 isSelected={selectedCaster === char.instanceId}
-                // --- FIX: Allow targeting self/allies ---
-                onClick={selectedSkill && isMyTurn && char.isAlive ? () => handleUseSkill(char.instanceId) : undefined}
+                onClick={() => {
+                  console.log(`TARGET CLICKED: Ally ${char.name}. Conditions: selectedSkill=${!!selectedSkill}, isMyTurn=${isMyTurn}, isAlive=${char.isAlive}`);
+                  if (selectedSkill && isMyTurn && char.isAlive) {
+                    handleUseSkill(char.instanceId);
+                  }
+                }}
             />
           </div>
           <div className="flex-1 flex gap-2">
@@ -105,6 +122,7 @@ export default function CombatDisplay() {
                 skill={skill}
                 canAfford={canAffordSkill(skill) && isMyTurn && char.isAlive}
                 onClick={() => {
+                  console.log(`SKILL BUTTON CLICKED: Set selectedSkill to ${skill.name}`);
                   setSelectedSkill(skill);
                   setSelectedCaster(char.instanceId);
                 }}
