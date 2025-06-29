@@ -1,38 +1,34 @@
 'use client';
 
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
-import { useState } from 'react';
 import { arrayMove, SortableContext, horizontalListSortingStrategy, useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import Image from 'next/image';
 
 // Individual item in the stack
-function SortableSkill({ action }: { action: any }) {
-const {
-attributes,
-listeners,
-setNodeRef,
-transform,
-transition,
-    isDragging, // dnd-kit provides this to know when an item is being dragged
-} = useSortable({ id: action.skill.id });
+function SortableSkill({ action, onRemove }: { action: any, onRemove: () => void }) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+  } = useSortable({ id: action.skill.id });
 
-const style = {
-transform: CSS.Transform.toString(transform),
-transition,
-    // --- FIX: Hide the original item while it's being dragged ---
-    opacity: isDragging ? 0 : 1,
-};
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
 
-return (
-<div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative touch-none flex-shrink-0">
+  return (
+    <div ref={setNodeRef} style={style} {...attributes} {...listeners} className="relative touch-none flex-shrink-0">
       <div className="w-16 h-16 bg-gray-700 rounded-md border-2 border-blue-500 flex items-center justify-center text-white font-bold text-xs p-1 text-center">
         {action.caster.imageUrl ? (
           <Image src={action.caster.imageUrl} alt={action.skill.name} width={64} height={64} className="rounded-md object-cover" />
         ) : (
           action.skill.name
         )}
-</div>
+      </div>
       {/* --- NEW: The clickable "X" button --- */}
       <button 
         onClick={(e) => {
@@ -46,60 +42,42 @@ return (
         ×
       </button>
     </div>
-);
+  );
 }
 
 
-// The main SkillStack component
+// The main SkillStack component, now simplified
 export default function SkillStack({ queue, onReorder, onRemove }: { queue: any[], onReorder: (oldIndex: number, newIndex: number) => void, onRemove: (index: number) => void }) {
-  const [activeAction, setActiveAction] = useState<any | null>(null);
-const sensors = useSensors(useSensor(PointerSensor, {
-activationConstraint: {
-distance: 5,
-},
-}));
+  const sensors = useSensors(useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 5,
+    },
+  }));
 
-  function handleDragStart(event: any) {
-    const { active } = event;
-    // Store the full action object of the item being dragged
-    const action = queue.find(item => item.skill.id === active.id);
-    setActiveAction(action);
+  function handleDragEnd(event: any) {
+    const { active, over } = event;
+    // The drag-end handler now only needs to handle reordering
+    if (over && active.id !== over.id) {
+      const oldIndex = queue.findIndex(item => item.skill.id === active.id);
+      const newIndex = queue.findIndex(item => item.skill.id === over.id);
+      onReorder(oldIndex, newIndex);
+    }
   }
 
-function handleDragEnd(event: any) {
-const { active, over } = event;
-    // The drag-end handler now only needs to handle reordering
-if (over && active.id !== over.id) {
-const oldIndex = queue.findIndex(item => item.skill.id === active.id);
-const newIndex = queue.findIndex(item => item.skill.id === over.id);
-onReorder(oldIndex, newIndex);
-}
-}
-
-return (
-<div className="bg-gray-900 p-4 rounded-lg">
-<h3 className="text-lg font-semibold mb-3 text-center">Skill Stack</h3>
-      <DndContext 
-        sensors={sensors} 
-        collisionDetection={rectIntersection} 
-        onDragStart={handleDragStart}
-        onDragEnd={handleDragEnd}
-      >
-<SortableContext items={queue.map(item => item.skill.id)} strategy={horizontalListSortingStrategy}>
-<div className="flex gap-4 items-center justify-center min-h-[80px]">
-            {queue.length > 0 ? queue.map((action) => (
-              <SortableSkill key={action.skill.id} action={action} />
-)) : (
-<p className="text-gray-500">Click a skill and target to add to the stack.</p>
-)}
-</div>
-</SortableContext>
-        
-        {/* This overlay renders the "floating" component while dragging */}
-        <DragOverlay>
-          {activeAction ? <SkillItem action={activeAction} /> : null}
-        </DragOverlay>
-</DndContext>
-</div>
-);
+  return (
+    <div className="bg-gray-900 p-4 rounded-lg">
+      <h3 className="text-lg font-semibold mb-3 text-center">Skill Stack</h3>
+      <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <SortableContext items={queue.map(item => item.skill.id)} strategy={horizontalListSortingStrategy}>
+          <div className="flex gap-4 items-center justify-center min-h-[80px]">
+            {queue.length > 0 ? queue.map((action, index) => (
+              <SortableSkill key={action.skill.id} action={action} onRemove={() => onRemove(index)} />
+            )) : (
+              <p className="text-gray-500">Click a skill and target to add to the stack.</p>
+            )}
+          </div>
+        </SortableContext>
+      </DndContext>
+    </div>
+  );
 }
