@@ -31,7 +31,7 @@ export default function CombatDisplay() {
     ? gameState.players[Object.keys(gameState.players).find(id => id !== myId)!]
     : undefined;
   const isMyTurn = myId ? gameState.activePlayerId === myId : false;
-  console.log("My turn? ${isMyTurn}   -  playerId turn: ${gameState.activePlayerId}" );
+  console.log(`My turn? ${isMyTurn}   -  playerId turn: ${gameState.activePlayerId}` );
 
   const canAffordSkill = (skill: Skill) => {
     if (!myPlayer || !myPlayer.chakra) return false;
