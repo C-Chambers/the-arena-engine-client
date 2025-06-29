@@ -1,6 +1,6 @@
 'use client'; 
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Character, Skill } from '../types';
 import CharacterCard from './CharacterCard';
 import SkillButton from './SkillButton';
@@ -21,23 +21,16 @@ export default function CombatDisplay() {
     }
   }, []);
 
-  // --- THIS IS THE CRITICAL FIX ---
-  // This effect runs every time the game's turn number changes.
-  // It resets the local state, ensuring the component is ready for the new turn.
   useEffect(() => {
-    const turn = gameState ? gameState.turn : 'N/A';
-    // DEBUG LOG 1: Check if the turn change is detected
-    console.log(`%cTURN ${turn}: State updated. Resetting local skill selection.`, 'color: yellow; font-weight: bold;');
+    // When a new turn starts, clear local state
     setSelectedSkill(null);
     setSelectedCaster(null);
-    setErrorMsg('');
+    setErrorMsg(''); // Clear any old errors from the context
   }, [gameState?.turn, setErrorMsg]);
 
+  // The conflicting onmessage handler has been REMOVED from here.
 
-  // Action handlers for the Skill Stack system
   const handleQueueSkill = (targetId: string) => {
-    const skillName = selectedSkill ? selectedSkill.name : 'Unknown Skill';
-    console.log(`%cHANDLE QUEUE SKILL: Sending skill ${skillName} on target ${targetId}`, 'color: cyan');
     if (socket.current && selectedSkill && selectedCaster) {
       const casterChar = gameState.players[myId!].team.find((c: Character) => c.instanceId === selectedCaster);
       socket.current.send(JSON.stringify({ 
@@ -62,27 +55,47 @@ export default function CombatDisplay() {
   };
 
   const handleExecuteTurn = () => {
-    console.log("%cEXECUTE TURN CLICKED", 'color: orange; font-weight: bold;');
     if(socket.current) {
         socket.current.send(JSON.stringify({ type: 'EXECUTE_TURN' }));
     }
   };
   
   if (!gameState || !myId) {
+    // This part should rarely be seen now, as redirection happens in context
     return (
-      <div className="flex items-center justify-center h-full">
-        <div className="bg-gray-700 p-8 rounded-lg shadow-xl text-center">
-            <h2 className="text-2xl font-bold mb-4 text-white">Game Status</h2>
-            <p className="text-xl text-white animate-pulse">Waiting for game to start...</p>
+        <div className="flex items-center justify-center h-full">
+            <p className="text-white text-xl animate-pulse">Loading Game...</p>
         </div>
-      </div>
     );
   }
 
   const myPlayer = gameState.players[myId];
-  const opponentPlayer = gameState.players[Object.keys(gameState.players).find(id => id !== myId)!];
+  const opponentPlayer = gameState.players[Object.keys(gameState.players).find((id: any) => id !== myId)!];
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
+  // --- NEW: Client-side function to check affordability ---
+  const canAffordSkill = (skill: Skill) => {
+    if (!myPlayer || !myPlayer.chakra) return false;
+    
+    // 1. Calculate the cost of skills already in the queue
+    const currentCost = myPlayer.actionQueue.reduce((acc: any, action: any) => {
+        for (const type in action.skill.cost) {
+            acc[type] = (acc[type] || 0) + action.skill.cost[type];
+        }
+        return acc;
+    }, {});
+
+    // 2. Add the cost of the new skill to the queued cost
+    for (const type in skill.cost) {
+        const futureCost = (currentCost[type] || 0) + skill.cost[type];
+        // 3. Check if the player has enough chakra for the combined cost
+        if (!myPlayer.chakra[type] || myPlayer.chakra[type] < futureCost) {
+            return false;
+        }
+    }
+    return true;
+  };
+
   if (gameState.isGameOver) {
     return (
         <div className="text-center text-white">
@@ -94,7 +107,6 @@ export default function CombatDisplay() {
 
   return (
     <div className="w-full h-full flex flex-col gap-4">
-      {/* Opponent's Team */}
       <div className="flex gap-4">
         {opponentPlayer.team.map((char: Character) => (
           <div key={char.instanceId} className="flex-1">
@@ -111,14 +123,12 @@ export default function CombatDisplay() {
         ))}
       </div>
 
-      {/* Turn Indicator */}
       <div className="text-center bg-gray-900 py-2 rounded-lg min-h-[56px]">
         <p className="font-bold text-xl">Turn {gameState.turn}: <span className={isMyTurn ? 'text-green-400' : 'text-red-400'}>{isMyTurn ? "Your Turn" : "Opponent's Turn"}</span></p>
         {selectedSkill && <p className="text-sm text-purple-400 animate-pulse">Select a target for {selectedSkill.name}</p>}
         {errorMsg && <p className="text-sm text-red-500 font-bold">{errorMsg}</p>}
       </div>
 
-      {/* Player's Team & Skills */}
       {myPlayer.team.map((char: Character) => (
         <div key={char.instanceId} className="flex items-center gap-4">
           <div className="w-1/3">
@@ -141,7 +151,7 @@ export default function CombatDisplay() {
                 <SkillButton 
                   key={skill.id}
                   skill={skill}
-                  canAfford={true} // Chakra cost is validated on the server for the whole queue
+                  canAfford={canAffordSkill(skill)}
                   cooldown={cooldown}
                   isQueued={hasQueued}
                   onClick={() => {
@@ -155,7 +165,6 @@ export default function CombatDisplay() {
         </div>
       ))}
       
-      {/* Bottom Bar: Skill Stack and Execute Button */}
       <div className="flex gap-4 mt-auto">
         <div className="w-2/3">
             <SkillStack queue={myPlayer.actionQueue} onReorder={handleReorderQueue} onRemove={handleDequeueSkill} />
