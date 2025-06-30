@@ -7,6 +7,7 @@ interface SkillButtonProps {
   canAfford: boolean;
   cooldown: number;
   isQueued: boolean;
+  isStunned: boolean;
   onClick: () => void;
 }
 

@@ -164,7 +164,6 @@ export default function CombatDisplay() {
               const hasQueued = myPlayer.actionQueue.some((a: any) => a.casterId === char.instanceId);
               // --- NEW: Check if the character is stunned ---
               const isStunned = char.statuses.some((status: any) => status.status === 'stun');
-
               return (
                 <SkillButton 
                   key={skill.id}
