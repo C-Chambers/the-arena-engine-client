@@ -17,8 +17,10 @@ interface Skill {
   skill_persistence: string;
   icon_url: string;
 }
+
+// --- UPDATED: The interface now correctly uses 'id' ---
 interface CharacterForSelect {
-  character_id: number;
+  id: number; 
   name: string;
 }
 
@@ -58,9 +60,9 @@ export default function AdminSkillsPage() {
       setSkills(skillsRes.data);
       setCharacters(charsRes.data);
       
-      // --- FIX: Only set the default character if the list is not empty ---
       if (charsRes.data && charsRes.data.length > 0) {
-        setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].character_id.toString() }));
+        // --- UPDATED: Now accesses the correct 'id' property ---
+        setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].id.toString() }));
       }
 
     } catch (err) {
@@ -95,8 +97,8 @@ export default function AdminSkillsPage() {
       });
       
       fetchData(); 
-      // --- FIX: Safely reset the form state ---
-      const defaultCharId = characters.length > 0 ? characters[0].character_id.toString() : '';
+      // --- UPDATED: Safely reset the form state using 'id' ---
+      const defaultCharId = characters.length > 0 ? characters[0].id.toString() : '';
       setNewSkill({ 
           character_id: defaultCharId, 
           name: '', description: '', cost: '{}', effects: '[]',
@@ -118,8 +120,9 @@ export default function AdminSkillsPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <select name="character_id" value={newSkill.character_id} onChange={handleInputChange} className="bg-gray-700 p-2 rounded" required>
                 <option value="" disabled>Select Owner</option>
+                {/* --- UPDATED: Maps over the correct 'id' property --- */}
                 {characters.map(char => (
-                    <option key={char.character_id} value={char.character_id}>{char.name}</option>
+                    <option key={char.id} value={char.id}>{char.name}</option>
                 ))}
             </select>
             <input name="name" value={newSkill.name} onChange={handleInputChange} placeholder="Skill Name" className="bg-gray-700 p-2 rounded" required />
