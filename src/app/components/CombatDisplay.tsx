@@ -166,8 +166,8 @@ export default function CombatDisplay() {
               const isStunned = char.statuses.some((status: any) => status.status === 'stun');
 
               // --- NEW: Logic for locked and empowered skills ---
-              const isEmpowered = char.statuses.some((s: any) => s.type === 'empower_skill' && s.skillId === skill.id);
-              const isEnabled = char.statuses.some((s: any) => s.type === 'enable_skill' && s.skillId === skill.id);
+              const isEmpowered = char.statuses.some((s: any) => s.status === 'empower_skill' && s.skillId === skill.id);
+              const isEnabled = char.statuses.some((s: any) => s.status === 'enable_skill' && s.skillId === skill.id);
               
               // A skill is only visible if it's not locked by default, OR it has been temporarily enabled.
               if (skill.is_locked_by_default && !isEnabled) {
