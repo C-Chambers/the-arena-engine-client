@@ -16,7 +16,7 @@ export default function SkillButton({ skill, canAfford, cooldown, isQueued, onCl
   return (
     <button
       onClick={onClick}
-      disabled={!canAfford || isOnCooldown || isQueued}
+      disabled={!canAfford || isOnCooldown || isQueued || isStunned}
       className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-sm text-center disabled:bg-gray-500 disabled:cursor-not-allowed hover:enabled:bg-blue-700 transition-colors relative"
       title={skill.description}
     >
@@ -33,6 +33,12 @@ export default function SkillButton({ skill, canAfford, cooldown, isQueued, onCl
       {!isQueued && !isOnCooldown && !canAfford && (
         <div className="absolute inset-0 bg-black bg-opacity-70 flex items-center justify-center rounded-md">
            <span className="text-white font-bold text-xs">BROKE BOI</span>
+        </div>
+      )}
+      {/* --- NEW: Visual overlay for the stun status --- */}
+      {isStunned && (
+        <div className="absolute inset-0 bg-yellow-500 bg-opacity-80 flex items-center justify-center rounded-md">
+           <span className="text-black font-bold text-xs">STUNNED</span>
         </div>
       )}
       <p className="font-semibold">{skill.name}</p>

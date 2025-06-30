@@ -84,7 +84,7 @@ export default function CombatDisplay() {
     const totalCost = { ...currentQueueCost };
     for (const type in skill.cost) {
         totalCost[type] = (totalCost[type] || 0) + skill.cost[type];
-    }
+        }
 
     // Now, run the two-pass validation
     const tempChakra = { ...myPlayer.chakra };
@@ -94,7 +94,7 @@ export default function CombatDisplay() {
         if (type !== 'Random') {
             if (!tempChakra[type] || tempChakra[type] < totalCost[type]) {
                 return false; // Not enough specific chakra
-            }
+    }
             tempChakra[type] -= totalCost[type];
         }
     }
@@ -162,6 +162,9 @@ export default function CombatDisplay() {
             {char.skills.map((skill: Skill) => {
               const cooldown = myPlayer.cooldowns[skill.id] || 0;
               const hasQueued = myPlayer.actionQueue.some((a: any) => a.casterId === char.instanceId);
+              // --- NEW: Check if the character is stunned ---
+              const isStunned = char.statuses.some((status: any) => status.type === 'stun');
+
               return (
                 <SkillButton 
                   key={skill.id}
@@ -169,6 +172,7 @@ export default function CombatDisplay() {
                   canAfford={canAffordSkill(skill)}
                   cooldown={cooldown}
                   isQueued={hasQueued}
+                  isStunned={isStunned} // Pass the new prop
                   onClick={() => {
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);
