@@ -38,7 +38,7 @@ export default function AdminSkillsPage() {
     skill_class: '',
     skill_range: '',
     skill_persistence: '',
-    icon_url: '', // New field in form state
+    icon_url: '',
   });
 
   const fetchData = async () => {
@@ -57,9 +57,12 @@ export default function AdminSkillsPage() {
       ]);
       setSkills(skillsRes.data);
       setCharacters(charsRes.data);
-      if (charsRes.data.length > 0) {
+      
+      // --- FIX: Only set the default character if the list is not empty ---
+      if (charsRes.data && charsRes.data.length > 0) {
         setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].character_id.toString() }));
       }
+
     } catch (err) {
       setError('Failed to fetch data.');
     } finally {
@@ -92,8 +95,10 @@ export default function AdminSkillsPage() {
       });
       
       fetchData(); 
+      // --- FIX: Safely reset the form state ---
+      const defaultCharId = characters.length > 0 ? characters[0].character_id.toString() : '';
       setNewSkill({ 
-          character_id: characters[0]?.character_id.toString() || '', 
+          character_id: defaultCharId, 
           name: '', description: '', cost: '{}', effects: '[]',
           cooldown: 0, skill_class: '', skill_range: '', skill_persistence: '', icon_url: '' 
       });
@@ -125,7 +130,6 @@ export default function AdminSkillsPage() {
             <input name="skill_range" value={newSkill.skill_range} onChange={handleInputChange} placeholder="Range (e.g. melee)" className="bg-gray-700 p-2 rounded" />
             <input name="skill_persistence" value={newSkill.skill_persistence} onChange={handleInputChange} placeholder="Persistence (e.g. instant)" className="bg-gray-700 p-2 rounded" />
           </div>
-          {/* --- NEW: Input for the skill's icon URL --- */}
           <input name="icon_url" value={newSkill.icon_url} onChange={handleInputChange} placeholder="Icon URL (e.g., /images/icons/skill.png)" className="w-full bg-gray-700 p-2 rounded" />
           <textarea name="description" value={newSkill.description} onChange={handleInputChange} placeholder="Skill Description" className="w-full bg-gray-700 p-2 rounded" rows={2} required />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
