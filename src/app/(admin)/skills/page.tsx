@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// ... (Interface definitions remain the same)
 interface Skill {
   skill_id: number;
   character_id: number;
@@ -16,9 +15,10 @@ interface Skill {
   skill_class: string;
   skill_range: string;
   skill_persistence: string;
+  icon_url: string;
 }
 interface CharacterForSelect {
-  id: string;
+  character_id: number;
   name: string;
 }
 
@@ -28,7 +28,6 @@ export default function AdminSkillsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   
-  // UPDATED: Added new fields to the form state
   const [newSkill, setNewSkill] = useState({
     character_id: '',
     name: '',
@@ -39,10 +38,10 @@ export default function AdminSkillsPage() {
     skill_class: '',
     skill_range: '',
     skill_persistence: '',
+    icon_url: '', // New field in form state
   });
 
   const fetchData = async () => {
-    // ... (fetchData logic remains the same)
     const token = localStorage.getItem('arena-token');
     if (!token) {
       setError('Authentication Error');
@@ -59,7 +58,7 @@ export default function AdminSkillsPage() {
       setSkills(skillsRes.data);
       setCharacters(charsRes.data);
       if (charsRes.data.length > 0) {
-        setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].id }));
+        setNewSkill(prev => ({ ...prev, character_id: charsRes.data[0].character_id.toString() }));
       }
     } catch (err) {
       setError('Failed to fetch data.');
@@ -94,9 +93,9 @@ export default function AdminSkillsPage() {
       
       fetchData(); 
       setNewSkill({ 
-          character_id: characters[0]?.id || '', 
+          character_id: characters[0]?.character_id.toString() || '', 
           name: '', description: '', cost: '{}', effects: '[]',
-          cooldown: 0, skill_class: '', skill_range: '', skill_persistence: '' 
+          cooldown: 0, skill_class: '', skill_range: '', skill_persistence: '', icon_url: '' 
       });
 
     } catch (err) {
@@ -113,21 +112,21 @@ export default function AdminSkillsPage() {
         <form onSubmit={handleCreateSkill} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <select name="character_id" value={newSkill.character_id} onChange={handleInputChange} className="bg-gray-700 p-2 rounded" required>
-                <option value="" disabled>Select Owner Character</option>
-                {/* --- UPDATED: Now uses char.id which exists on the object --- */}
+                <option value="" disabled>Select Owner</option>
                 {characters.map(char => (
-                    <option key={char.id} value={char.id}>{char.name}</option>
+                    <option key={char.character_id} value={char.character_id}>{char.name}</option>
                 ))}
             </select>
             <input name="name" value={newSkill.name} onChange={handleInputChange} placeholder="Skill Name" className="bg-gray-700 p-2 rounded" required />
             <input name="cooldown" type="number" value={newSkill.cooldown} onChange={handleInputChange} placeholder="Cooldown" className="bg-gray-700 p-2 rounded" required />
           </div>
-          {/* --- NEW: Inputs for skill classifications --- */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <input name="skill_class" value={newSkill.skill_class} onChange={handleInputChange} placeholder="Class (e.g. physical)" className="bg-gray-700 p-2 rounded" />
             <input name="skill_range" value={newSkill.skill_range} onChange={handleInputChange} placeholder="Range (e.g. melee)" className="bg-gray-700 p-2 rounded" />
             <input name="skill_persistence" value={newSkill.skill_persistence} onChange={handleInputChange} placeholder="Persistence (e.g. instant)" className="bg-gray-700 p-2 rounded" />
           </div>
+          {/* --- NEW: Input for the skill's icon URL --- */}
+          <input name="icon_url" value={newSkill.icon_url} onChange={handleInputChange} placeholder="Icon URL (e.g., /images/icons/skill.png)" className="w-full bg-gray-700 p-2 rounded" />
           <textarea name="description" value={newSkill.description} onChange={handleInputChange} placeholder="Skill Description" className="w-full bg-gray-700 p-2 rounded" rows={2} required />
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <textarea name="cost" value={newSkill.cost} onChange={handleInputChange} placeholder='Cost JSON (e.g., {"Power": 1})' className="w-full bg-gray-700 p-2 rounded font-mono" rows={3} required />
