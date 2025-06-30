@@ -8,17 +8,21 @@ interface SkillButtonProps {
   cooldown: number;
   isQueued: boolean;
   isStunned: boolean;
+  isEmpowered: boolean; // NEW: To show the empowered state
   onClick: () => void;
 }
 
-export default function SkillButton({ skill, canAfford, cooldown, isQueued, isStunned, onClick }: SkillButtonProps) {
+export default function SkillButton({ skill, canAfford, cooldown, isQueued, isStunned, isEmpowered, onClick }: SkillButtonProps) {
   const isOnCooldown = cooldown > 0;
+
+  // --- NEW: Add conditional classes for the empowered state ---
+  const empoweredClasses = isEmpowered ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : '';
 
   return (
     <button
       onClick={onClick}
       disabled={!canAfford || isOnCooldown || isQueued || isStunned}
-      className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-sm text-center disabled:bg-gray-500 disabled:cursor-not-allowed hover:enabled:bg-blue-700 transition-colors relative"
+      className={`flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-sm text-center disabled:bg-gray-500 disabled:cursor-not-allowed hover:enabled:bg-blue-700 transition-all relative ${empoweredClasses}`}
       title={skill.description}
     >
       {isOnCooldown && (

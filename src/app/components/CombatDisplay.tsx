@@ -164,6 +164,16 @@ export default function CombatDisplay() {
               const hasQueued = myPlayer.actionQueue.some((a: any) => a.casterId === char.instanceId);
               // --- NEW: Check if the character is stunned ---
               const isStunned = char.statuses.some((status: any) => status.status === 'stun');
+
+              // --- NEW: Logic for locked and empowered skills ---
+              const isEmpowered = char.statuses.some((s: any) => s.type === 'empower_skill' && s.skillId === skill.id);
+              const isEnabled = char.statuses.some((s: any) => s.type === 'enable_skill' && s.skillId === skill.id);
+              
+              // A skill is only visible if it's not locked by default, OR it has been temporarily enabled.
+              if (skill.is_locked_by_default && !isEnabled) {
+                return null; // Don't render the button at all
+              }
+
               return (
                 <SkillButton 
                   key={skill.id}
@@ -171,7 +181,8 @@ export default function CombatDisplay() {
                   canAfford={canAffordSkill(skill)}
                   cooldown={cooldown}
                   isQueued={hasQueued}
-                  isStunned={isStunned} // Pass the new prop
+                  isStunned={isStunned}
+                  isEmpowered={isEmpowered} // Pass the new prop
                   onClick={() => {
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);
