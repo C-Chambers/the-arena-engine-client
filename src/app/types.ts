@@ -6,6 +6,7 @@ export interface StatusEffect {
   duration: number;
   sourceSkill: {
     id: number;
+    name: number;
     iconUrl: string;
   };
   // Other potential properties like damage, value, etc.
