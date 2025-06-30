@@ -22,13 +22,10 @@ export default function CombatDisplay() {
   }, []);
 
   useEffect(() => {
-    // When a new turn starts, clear local state
     setSelectedSkill(null);
     setSelectedCaster(null);
-    setErrorMsg(''); // Clear any old errors from the context
+    setErrorMsg('');
   }, [gameState?.turn, setErrorMsg]);
-
-  // The conflicting onmessage handler has been REMOVED from here.
 
   const handleQueueSkill = (targetId: string) => {
     if (socket.current && selectedSkill && selectedCaster) {
@@ -61,7 +58,6 @@ export default function CombatDisplay() {
   };
   
   if (!gameState || !myId) {
-    // This part should rarely be seen now, as redirection happens in context
     return (
         <div className="flex items-center justify-center h-full">
             <p className="text-white text-xl animate-pulse">Loading Game...</p>
@@ -73,27 +69,46 @@ export default function CombatDisplay() {
   const opponentPlayer = gameState.players[Object.keys(gameState.players).find((id: any) => id !== myId)!];
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
-  // --- NEW: Client-side function to check affordability ---
+  // --- UPDATED: canAffordSkill now uses the two-pass algorithm ---
   const canAffordSkill = (skill: Skill) => {
     if (!myPlayer || !myPlayer.chakra) return false;
     
-    // 1. Calculate the cost of skills already in the queue
-    const currentCost = myPlayer.actionQueue.reduce((acc: any, action: any) => {
+    // First, calculate the total cost of the queue plus the new skill
+    const currentQueueCost = myPlayer.actionQueue.reduce((acc: any, action: any) => {
         for (const type in action.skill.cost) {
             acc[type] = (acc[type] || 0) + action.skill.cost[type];
         }
         return acc;
     }, {});
-
-    // 2. Add the cost of the new skill to the queued cost
+    
+    const totalCost = { ...currentQueueCost };
     for (const type in skill.cost) {
-        const futureCost = (currentCost[type] || 0) + skill.cost[type];
-        // 3. Check if the player has enough chakra for the combined cost
-        if (!myPlayer.chakra[type] || myPlayer.chakra[type] < futureCost) {
-            return false;
+        totalCost[type] = (totalCost[type] || 0) + skill.cost[type];
+    }
+
+    // Now, run the two-pass validation
+    const tempChakra = { ...myPlayer.chakra };
+    
+    // 1. First Pass: Deduct specific costs
+    for (const type in totalCost) {
+        if (type !== 'Random') {
+            if (!tempChakra[type] || tempChakra[type] < totalCost[type]) {
+                return false; // Not enough specific chakra
+            }
+            tempChakra[type] -= totalCost[type];
         }
     }
-    return true;
+    
+    // 2. Second Pass: Check if remaining chakra can cover the random cost
+    const randomCost = totalCost['Random'] || 0;
+    if (randomCost > 0) {
+        const remainingChakraCount = Object.values(tempChakra).reduce((sum: number, count: any) => sum + count, 0);
+        if (remainingChakraCount < randomCost) {
+            return false; // Not enough remaining chakra for the random cost
+        }
+    }
+    
+    return true; // The cost can be paid
   };
 
   if (gameState.isGameOver) {
