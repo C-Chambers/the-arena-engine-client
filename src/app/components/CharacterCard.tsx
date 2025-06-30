@@ -1,6 +1,7 @@
 'use client';
 
-import { Character } from '../types'; // We'll create this type definition file next
+import { Character, StatusEffect } from '../types'; 
+import Image from 'next/image';
 
 interface CharacterCardProps {
   character: Character;
@@ -18,12 +19,32 @@ export default function CharacterCard({ character, isPlayer, isSelected, onClick
       onClick={onClick}
     >
       {/* Portrait */}
-      <div className="w-20 h-20 bg-gray-900 rounded-md flex items-center justify-center text-xs text-gray-400">
-        [Portrait]
+      <div className="w-20 h-20 bg-gray-900 rounded-md flex-shrink-0 flex items-center justify-center text-xs text-gray-400 relative">
+        {character.imageUrl ? (
+          <Image src={character.imageUrl} alt={character.name} layout="fill" objectFit="cover" className="rounded-md" />
+        ) : (
+          <span>[P]</span>
+        )}
       </div>
       {/* Info */}
-      <div className="flex-grow">
-        <p className="font-bold text-lg">{character.name}</p>
+      <div className="flex-grow min-w-0">
+        <div className="flex items-center gap-2">
+            <p className="font-bold text-lg truncate">{character.name}</p>
+            {/* --- NEW: Status Icon Container --- */}
+            <div className="flex gap-1.5">
+                {character.statuses && character.statuses.map((status: StatusEffect, index: number) => (
+                    // Ensure the status has the required info before rendering
+                    status.sourceSkill && status.sourceSkill.iconUrl && (
+                        <div key={index} className="relative w-6 h-6" title={`${status.type} - ${status.duration} turns left`}>
+                            <Image src={status.sourceSkill.iconUrl} alt={status.type} layout="fill" className="rounded-sm" />
+                            <div className="absolute -bottom-1 -right-1 bg-black bg-opacity-80 rounded-full text-white text-xs font-bold w-4 h-4 flex items-center justify-center pointer-events-none">
+                                {status.duration}
+                            </div>
+                        </div>
+                    )
+                ))}
+            </div>
+        </div>
         <div className="w-full bg-gray-600 rounded-full h-4 mt-1">
           <div 
             className="bg-green-500 h-4 rounded-full" 
