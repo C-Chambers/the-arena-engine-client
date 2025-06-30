@@ -163,7 +163,7 @@ export default function CombatDisplay() {
               const cooldown = myPlayer.cooldowns[skill.id] || 0;
               const hasQueued = myPlayer.actionQueue.some((a: any) => a.casterId === char.instanceId);
               // --- NEW: Check if the character is stunned ---
-              const isStunned = char.statuses.some((status: any) => status.type === 'stun');
+              const isStunned = char.statuses.some((status: any) => status.status === 'stun');
 
               return (
                 <SkillButton 
