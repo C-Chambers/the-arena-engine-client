@@ -35,7 +35,7 @@ export default function CharacterCard({ character, isPlayer, isSelected, onClick
                 {character.statuses && character.statuses.map((status: StatusEffect, index: number) => (
                     // Ensure the status has the required info before rendering
                     status.sourceSkill && status.sourceSkill.iconUrl && (
-                        <div key={index} className="relative w-6 h-6" title={`${status.sourceSkill.name}`}>
+                        <div key={index} className="relative w-6 h-6" title={`${status.type} - ${status.duration} turns left`}>
                             <Image src={status.sourceSkill.iconUrl} alt={status.sourceSkill.name} layout="fill" className="rounded-sm" />
                             <div className="absolute -bottom-1 -right-1 bg-black bg-opacity-80 rounded-full text-white text-xs font-bold w-4 h-4 flex items-center justify-center pointer-events-none">
                                 {status.duration}

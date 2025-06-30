@@ -20,7 +20,8 @@ export interface Skill {
   cost: Record<string, number>;
   effects: object[];
   cooldown: number;
-  icon_url: string; // Add the icon_url property
+  icon_url: string; 
+  is_locked_by_default?: boolean;
 }
 
 export interface Character {
