@@ -11,7 +11,7 @@ interface SkillButtonProps {
   onClick: () => void;
 }
 
-export default function SkillButton({ skill, canAfford, cooldown, isQueued, onClick }: SkillButtonProps) {
+export default function SkillButton({ skill, canAfford, cooldown, isQueued, isStunned, onClick }: SkillButtonProps) {
   const isOnCooldown = cooldown > 0;
 
   return (
