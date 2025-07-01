@@ -7,21 +7,24 @@ interface SkillButtonProps {
   canAfford: boolean;
   cooldown: number;
   isQueued: boolean;
-  isStunned: boolean;
-  isEmpowered: boolean; // NEW: To show the empowered state
+  stunnedClasses: string[] | null; // UPDATED: Replaces isStunned: boolean
+  isEmpowered: boolean;
   onClick: () => void;
 }
 
-export default function SkillButton({ skill, canAfford, cooldown, isQueued, isStunned, isEmpowered, onClick }: SkillButtonProps) {
+export default function SkillButton({ skill, canAfford, cooldown, isQueued, stunnedClasses, isEmpowered, onClick }: SkillButtonProps) {
   const isOnCooldown = cooldown > 0;
 
-  // --- NEW: Add conditional classes for the empowered state ---
+  // NEW: Check if this specific skill's class is included in the current stun classes
+  const isStunnedByClass = stunnedClasses ? stunnedClasses.includes(skill.skill_class) : false;
+
   const empoweredClasses = isEmpowered ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : '';
 
   return (
     <button
       onClick={onClick}
-      disabled={!canAfford || isOnCooldown || isQueued || isStunned}
+      // UPDATED: The disabled check now uses the more specific isStunnedByClass
+      disabled={!canAfford || isOnCooldown || isQueued || isStunnedByClass}
       className={`flex-1 px-3 py-2 bg-blue-600 text-white rounded-md text-sm text-center disabled:bg-gray-500 disabled:cursor-not-allowed hover:enabled:bg-blue-700 transition-all relative ${empoweredClasses}`}
       title={skill.description}
     >
@@ -40,15 +43,14 @@ export default function SkillButton({ skill, canAfford, cooldown, isQueued, isSt
            <span className="text-white font-bold text-xs">BROKE BOI</span>
         </div>
       )}
-      {/* --- NEW: Visual overlay for the stun status --- */}
-      {isStunned && (
+      {/* UPDATED: The visual overlay for stun now uses the specific class check */}
+      {isStunnedByClass && (
         <div className="absolute inset-0 bg-yellow-500 bg-opacity-80 flex items-center justify-center rounded-md">
            <span className="text-black font-bold text-xs">STUNNED</span>
         </div>
       )}
       <p className="font-semibold">{skill.name}</p>
       
-      {/* --- UPDATED: Chakra cost display logic --- */}
       <div className="flex justify-center items-center gap-1 text-xs font-mono mt-1">
         {Object.entries(skill.cost).map(([type, val]) => {
           if (type === 'Random') {

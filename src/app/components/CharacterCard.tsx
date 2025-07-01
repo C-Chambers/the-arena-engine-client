@@ -28,7 +28,7 @@ export default function CharacterCard({ character, isPlayer, isSelected, onClick
       </div>
       {/* Info */}
       <div className="flex-grow min-w-0">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
             <p className="font-bold text-lg truncate">{character.name}</p>
             {/* --- NEW: Status Icon Container --- */}
             <div className="flex gap-1.5">

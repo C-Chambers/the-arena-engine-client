@@ -93,7 +93,7 @@ export default function CombatDisplay() {
     for (const type in totalCost) {
         if (type !== 'Random') {
             if (!tempChakra[type] || tempChakra[type] < totalCost[type]) {
-                return false; // Not enough specific chakra
+                return false;
     }
             tempChakra[type] -= totalCost[type];
         }
@@ -104,11 +104,11 @@ export default function CombatDisplay() {
     if (randomCost > 0) {
         const remainingChakraCount = Object.values(tempChakra).reduce((sum: number, count: any) => sum + count, 0);
         if (remainingChakraCount < randomCost) {
-            return false; // Not enough remaining chakra for the random cost
+            return false;
         }
     }
     
-    return true; // The cost can be paid
+    return true;
   };
 
   if (gameState.isGameOver) {
@@ -162,16 +162,16 @@ export default function CombatDisplay() {
             {char.skills.map((skill: Skill) => {
               const cooldown = myPlayer.cooldowns[skill.id] || 0;
               const hasQueued = myPlayer.actionQueue.some((a: any) => a.casterId === char.instanceId);
-              // --- NEW: Check if the character is stunned ---
-              const isStunned = char.statuses.some((status: any) => status.status === 'stun');
+              
+              // --- UPDATED: Find the stun status to get its specific classes ---
+              const stunStatus = char.statuses.find((status: any) => status.status === 'stun');
+              const stunnedClasses = stunStatus ? stunStatus.classes : null;
 
-              // --- NEW: Logic for locked and empowered skills ---
               const isEmpowered = char.statuses.some((s: any) => s.status === 'empower_skill' && s.skillId === skill.id);
               const isEnabled = char.statuses.some((s: any) => s.status === 'enable_skill' && s.skillId === skill.id);
               
-              // A skill is only visible if it's not locked by default, OR it has been temporarily enabled.
               if (skill.is_locked_by_default && !isEnabled) {
-                return null; // Don't render the button at all
+                return null;
               }
 
               return (
@@ -181,8 +181,8 @@ export default function CombatDisplay() {
                   canAfford={canAffordSkill(skill)}
                   cooldown={cooldown}
                   isQueued={hasQueued}
-                  isStunned={isStunned}
-                  isEmpowered={isEmpowered} // Pass the new prop
+                  stunnedClasses={stunnedClasses} // UPDATED: Pass the array of stunned classes
+                  isEmpowered={isEmpowered}
                   onClick={() => {
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);
