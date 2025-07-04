@@ -22,6 +22,7 @@ export interface Skill {
   cooldown: number;
   icon_url: string; 
   is_locked_by_default?: boolean;
+  skill_class?: string;          // NEW: Add optional class property
 }
 
 export interface Character {
