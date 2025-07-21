@@ -1,7 +1,7 @@
 'use client'; 
 
 import React, { useState, useEffect } from 'react';
-import { Character, Skill, StatusEffect } from '../types';
+import { Character, Skill, StatusEffect, DamageEffect } from '../types';
 import CharacterCard from './CharacterCard';
 import SkillButton from './SkillButton';
 import { useGame } from '../context/GameContext';
@@ -13,7 +13,7 @@ export default function CombatDisplay() {
   const [myId, setMyId] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
-  const [hoveredTargetId, setHoveredTargetId] = useState<string | null>(null); // NEW: Track hovered target
+  const [hoveredTargetId, setHoveredTargetId] = useState<string | null>(null);
 
   useEffect(() => {
     const storedId = localStorage.getItem('myId');
@@ -172,7 +172,7 @@ export default function CombatDisplay() {
               // --- UPDATED: Find the stun status to get its specific classes ---
               const stunStatus = char.statuses.find((status: any) => status.status === 'stun');
               const stunnedClasses = stunStatus ? stunStatus.classes : null;
-
+              
               const isEmpowered = char.statuses.some((s: any) => s.status === 'empower_skill' && s.skillId === skill.id);
               const isEnabled = char.statuses.some((s: any) => s.status === 'enable_skill' && s.skillId === skill.id);
               
@@ -185,10 +185,10 @@ export default function CombatDisplay() {
                   const target = opponentPlayer.team.find((c: Character) => c.instanceId === hoveredTargetId);
                   if (target) {
                       const sharinganMark = target.statuses.find((s: StatusEffect) => s.status === 'sharingan_mark' && s.casterInstanceId === selectedCaster);
-                      // @ts-expect-error: bonus_if_marked is a custom property
-                      if (sharinganMark && skill.effects[0]?.bonus_if_marked) {
-                          // @ts-expect-error:  bonus_if_marked is a custom property
-                          bonusDamage = skill.effects[0].bonus_if_marked;
+                      // Find the first damage effect in the skill
+                      const damageEffect = skill.effects.find(e => e.type === 'damage') as DamageEffect | undefined;
+                      if (sharinganMark && damageEffect?.bonus_if_marked) {
+                          bonusDamage = damageEffect.bonus_if_marked;
                       }
                   }
               }
@@ -200,9 +200,9 @@ export default function CombatDisplay() {
                   canAfford={canAffordSkill(skill)}
                   cooldown={cooldown}
                   isQueued={hasQueued}
-                  stunnedClasses={stunnedClasses} // UPDATED: Pass the array of stunned classes
+                  isStunned={isStunned}
                   isEmpowered={isEmpowered}
-                  bonusDamage={bonusDamage} // Pass the new prop
+                  bonusDamage={bonusDamage}
                   onClick={() => {
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);
