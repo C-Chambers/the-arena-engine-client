@@ -1,7 +1,7 @@
 'use client'; 
 
 import React, { useState, useEffect } from 'react';
-import { Character, Skill } from '../types';
+import { Character, Skill, StatusEffect } from '../types';
 import CharacterCard from './CharacterCard';
 import SkillButton from './SkillButton';
 import { useGame } from '../context/GameContext';
@@ -13,6 +13,7 @@ export default function CombatDisplay() {
   const [myId, setMyId] = useState<string | null>(null);
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
   const [selectedCaster, setSelectedCaster] = useState<string | null>(null);
+  const [hoveredTargetId, setHoveredTargetId] = useState<string | null>(null); // NEW: Track hovered target
 
   useEffect(() => {
     const storedId = localStorage.getItem('myId');
@@ -93,8 +94,8 @@ export default function CombatDisplay() {
     for (const type in totalCost) {
         if (type !== 'Random') {
             if (!tempChakra[type] || tempChakra[type] < totalCost[type]) {
-                return false;
-    }
+            return false;
+        }
             tempChakra[type] -= totalCost[type];
         }
     }
@@ -122,9 +123,15 @@ export default function CombatDisplay() {
 
   return (
     <div className="w-full h-full flex flex-col gap-4">
+      {/* Opponent's Team */}
       <div className="flex gap-4">
         {opponentPlayer.team.map((char: Character) => (
-          <div key={char.instanceId} className="flex-1">
+          <div 
+            key={char.instanceId} 
+            className="flex-1"
+            onMouseEnter={() => setHoveredTargetId(char.instanceId)}
+            onMouseLeave={() => setHoveredTargetId(null)}
+          >
             <CharacterCard 
               character={char} 
               isPlayer={false} 
@@ -162,7 +169,6 @@ export default function CombatDisplay() {
             {char.skills.map((skill: Skill) => {
               const cooldown = myPlayer.cooldowns[skill.id] || 0;
               const hasQueued = myPlayer.actionQueue.some((a: any) => a.casterId === char.instanceId);
-              
               // --- UPDATED: Find the stun status to get its specific classes ---
               const stunStatus = char.statuses.find((status: any) => status.status === 'stun');
               const stunnedClasses = stunStatus ? stunStatus.classes : null;
@@ -172,6 +178,19 @@ export default function CombatDisplay() {
               
               if (skill.is_locked_by_default && !isEnabled) {
                 return null;
+              }
+              // --- NEW: Calculate bonus damage for hovered target ---
+              let bonusDamage = 0;
+              if (hoveredTargetId && selectedCaster === char.instanceId) {
+                  const target = opponentPlayer.team.find((c: Character) => c.instanceId === hoveredTargetId);
+                  if (target) {
+                      const sharinganMark = target.statuses.find((s: StatusEffect) => s.status === 'sharingan_mark' && s.casterInstanceId === selectedCaster);
+                      // @ts-ignore - bonus_if_marked is a custom property
+                      if (sharinganMark && skill.effects[0]?.bonus_if_marked) {
+                          // @ts-ignore
+                          bonusDamage = skill.effects[0].bonus_if_marked;
+                      }
+                  }
               }
 
               return (
@@ -183,6 +202,7 @@ export default function CombatDisplay() {
                   isQueued={hasQueued}
                   stunnedClasses={stunnedClasses} // UPDATED: Pass the array of stunned classes
                   isEmpowered={isEmpowered}
+                  bonusDamage={bonusDamage} // Pass the new prop
                   onClick={() => {
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);

@@ -1,9 +1,10 @@
 // src/app/types.ts
 
-// NEW: A specific type for status effects
 export interface StatusEffect {
   type: string;
+  status: string;
   duration: number;
+  casterInstanceId?: string; // NEW: Add optional caster ID for targeted effects
   sourceSkill: {
     id: number;
     name: string;
@@ -22,7 +23,9 @@ export interface Skill {
   cooldown: number;
   icon_url: string; 
   is_locked_by_default?: boolean;
-  skill_class: string;          // NEW: Add optional class property
+  skill_class?: string;
+  skill_range?: string;
+  skill_persistence?: string;
 }
 
 export interface Character {

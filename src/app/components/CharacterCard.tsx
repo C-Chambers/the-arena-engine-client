@@ -30,7 +30,7 @@ export default function CharacterCard({ character, isPlayer, isSelected, onClick
       <div className="flex-grow min-w-0">
         <div className="flex items-center gap-2 flex-wrap">
             <p className="font-bold text-lg truncate">{character.name}</p>
-            {/* --- NEW: Status Icon Container --- */}
+            {/* --- Status Icon Container --- */}
             <div className="flex gap-1.5">
                 {character.statuses && character.statuses.map((status: StatusEffect, index: number) => (
                     // Ensure the status has the required info before rendering

@@ -9,6 +9,7 @@ interface SkillButtonProps {
   isQueued: boolean;
   stunnedClasses: string[] | null; // UPDATED: Replaces isStunned: boolean
   isEmpowered: boolean;
+  bonusDamage?: number; // NEW: Optional prop for bonus damage
   onClick: () => void;
 }
 
@@ -49,8 +50,11 @@ export default function SkillButton({ skill, canAfford, cooldown, isQueued, stun
            <span className="text-black font-bold text-xs">STUNNED</span>
         </div>
       )}
-      <p className="font-semibold">{skill.name}</p>
-      
+      <p className="font-semibold">
+        {skill.name}
+        {/* --- NEW: Display bonus damage if it exists --- */}
+        {bonusDamage && bonusDamage > 0 && <span className="text-green-400 font-bold"> +{bonusDamage}</span>}
+      </p>
       <div className="flex justify-center items-center gap-1 text-xs font-mono mt-1">
         {Object.entries(skill.cost).map(([type, val]) => {
           if (type === 'Random') {
