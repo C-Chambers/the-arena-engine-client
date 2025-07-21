@@ -42,6 +42,7 @@ export interface StatusEffect {
   casterInstanceId?: string;
   sourceSkill: {
     id: number;
+    name: string;
     iconUrl: string;
   };
   [key: string]: any; 
@@ -57,6 +58,8 @@ export interface Skill {
   icon_url: string; 
   is_locked_by_default?: boolean;
   skill_class?: string;
+  skill_range?: string;
+  skill_persistence?: string;
 }
 
 export interface Character {
