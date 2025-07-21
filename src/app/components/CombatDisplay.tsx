@@ -185,9 +185,9 @@ export default function CombatDisplay() {
                   const target = opponentPlayer.team.find((c: Character) => c.instanceId === hoveredTargetId);
                   if (target) {
                       const sharinganMark = target.statuses.find((s: StatusEffect) => s.status === 'sharingan_mark' && s.casterInstanceId === selectedCaster);
-                      // @ts-expect-error - bonus_if_marked is a custom property
+
                       if (sharinganMark && skill.effects[0]?.bonus_if_marked) {
-                          // @ts-expect-error
+
                           bonusDamage = skill.effects[0].bonus_if_marked;
                       }
                   }
