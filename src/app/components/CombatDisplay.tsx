@@ -186,7 +186,7 @@ export default function CombatDisplay() {
                   if (target) {
                       const sharinganMark = target.statuses.find((s: StatusEffect) => s.status === 'sharingan_mark' && s.casterInstanceId === selectedCaster);
 
-                      if (sharinganMark && skill.effects[0]?.bonus_if_marked) {
+                      if (sharinganMark && skill.effects[0].bonus_if_marked) {
 
                           bonusDamage = skill.effects[0].bonus_if_marked;
                       }
