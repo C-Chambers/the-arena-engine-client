@@ -73,7 +73,7 @@ export default function RosterPage() {
       </div>
 
       <div className="flex-grow p-4 overflow-y-auto">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 items-start">
           {filteredRoster.map(character => (
             <RosterCard 
               key={character.id} 
