@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Character } from '../../types';
 import Image from 'next/image';
+import SkillImageGrid from '../../components/SkillImageGrid';
 
 export default function TeamBuilderPage() {
   const [roster, setRoster] = useState<Character[]>([]);
@@ -259,19 +260,10 @@ export default function TeamBuilderPage() {
               ))}
             </div>
           </div>
-          <div className="h-1/2 bg-gray-900 p-6 rounded-lg flex flex-col">
-            <h2 className="text-xl font-bold mb-4">Skills of {selectedCharacter ? selectedCharacter.name.split(',')[0] : '...'}</h2>
-            <div className="overflow-y-auto space-y-2 pr-2 flex-grow min-h-0">
-              {selectedCharacter ? selectedCharacter.skills.map(skill => (
-                  <div key={skill.id} className="bg-gray-800 p-2 rounded">
-                    <p className="font-semibold text-blue-300">{skill.name}</p>
-                    <p className="text-xs text-gray-400">{skill.description}</p>
-                  </div>
-              )) : (
-                <p className="text-gray-400">Select a character to see their skills.</p>
-              )}
-            </div>
-          </div>
+          <SkillImageGrid 
+            skills={selectedCharacter ? selectedCharacter.skills : []} 
+            characterName={selectedCharacter ? selectedCharacter.name.split(',')[0] : '...'} 
+          />
         </div>
       </div>
     </div>
