@@ -10,16 +10,41 @@ interface SkillButtonProps {
   stunnedClasses: string[] | null; // UPDATED: Replaces isStunned: boolean
   isEmpowered: boolean;
   bonusDamage?: number; // NEW: Optional prop for bonus damage
+  costReduction?: { value: number; reduction_type: 'flat' | 'percentage' } | null; // NEW: Cost reduction status
   onClick: () => void;
 }
 
-export default function SkillButton({ skill, canAfford, cooldown, isQueued, stunnedClasses, isEmpowered, bonusDamage, onClick }: SkillButtonProps) {
+export default function SkillButton({ skill, canAfford, cooldown, isQueued, stunnedClasses, isEmpowered, bonusDamage, costReduction, onClick }: SkillButtonProps) {
   const isOnCooldown = cooldown > 0;
 
   // NEW: Check if this specific skill's class is included in the current stun classes
   const isStunnedByClass = stunnedClasses ? stunnedClasses.includes(skill.skill_class) : false;
 
   const empoweredClasses = isEmpowered ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : '';
+
+  // NEW: Calculate the reduced cost if cost reduction is active
+  const getReducedCost = (originalCost: Record<string, number>) => {
+    if (!costReduction) return originalCost;
+
+    const reducedCost: Record<string, number> = {};
+    
+    for (const [type, value] of Object.entries(originalCost)) {
+      let newValue = value;
+      
+      if (costReduction.reduction_type === 'flat') {
+        newValue = Math.max(0, value - costReduction.value);
+      } else if (costReduction.reduction_type === 'percentage') {
+        newValue = Math.max(0, Math.floor(value * (1 - costReduction.value / 100)));
+      }
+      
+      reducedCost[type] = newValue;
+    }
+    
+    return reducedCost;
+  };
+
+  const displayCost = getReducedCost(skill.cost);
+  const hasReduction = costReduction && Object.entries(skill.cost).some(([type, value]) => displayCost[type] < value);
 
   return (
     <button
@@ -56,11 +81,24 @@ export default function SkillButton({ skill, canAfford, cooldown, isQueued, stun
         {bonusDamage && bonusDamage > 0 && <span className="text-green-400 font-bold"> +{bonusDamage}</span>}
       </p>
       <div className="flex justify-center items-center gap-1 text-xs font-mono mt-1">
-        {Object.entries(skill.cost).map(([type, val]) => {
+        {Object.entries(displayCost).map(([type, val]) => {
+          const originalVal = skill.cost[type];
+          const isReduced = hasReduction && val < originalVal;
+          
           if (type === 'Random') {
-            return <span key={type} className="text-gray-300">{`?:${val}`}</span>;
+            return (
+              <span key={type} className={`text-gray-300 ${isReduced ? 'text-green-400' : ''}`}>
+                {isReduced && <span className="line-through text-gray-500">{`?:${originalVal}`}</span>}
+                {isReduced ? ` ?:${val}` : `?:${val}`}
+              </span>
+            );
           }
-          return <span key={type}>{`${type[0]}:${val}`}</span>;
+          return (
+            <span key={type} className={isReduced ? 'text-green-400' : ''}>
+              {isReduced && <span className="line-through text-gray-500">{`${type[0]}:${originalVal}`}</span>}
+              {isReduced ? ` ${type[0]}:${val}` : `${type[0]}:${val}`}
+            </span>
+          );
         })}
       </div>
     </button>
