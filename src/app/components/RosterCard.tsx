@@ -1,20 +1,21 @@
 'use client';
 
-import { useState } from 'react';
 import { Character } from '../types';
 import Image from 'next/image';
 
 interface RosterCardProps {
   character: Character;
+  isExpanded: boolean; // NEW: Prop to control expansion
+  onToggle: () => void;   // NEW: Prop to notify the parent of a click
 }
 
-export default function RosterCard({ character }: RosterCardProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
+export default function RosterCard({ character, isExpanded, onToggle }: RosterCardProps) {
+  // The internal 'isExpanded' state has been removed.
 
   return (
     <div 
       className="bg-gray-900 rounded-lg overflow-hidden cursor-pointer transition-all duration-300 ease-in-out hover:ring-2 hover:ring-blue-500"
-      onClick={() => setIsExpanded(!isExpanded)}
+      onClick={onToggle} // Use the onToggle handler from props
     >
       {/* Collapsed View */}
       <div className="flex items-center p-4">
@@ -28,6 +29,7 @@ export default function RosterCard({ character }: RosterCardProps) {
       </div>
 
       {/* Expanded View */}
+      {/* The expansion is now controlled by the 'isExpanded' prop */}
       <div className={`transition-all duration-300 ease-in-out ${isExpanded ? 'max-h-96' : 'max-h-0'}`}>
         <div className="p-4 border-t border-gray-700">
           <h4 className="font-semibold text-blue-300 mb-2">Skills:</h4>

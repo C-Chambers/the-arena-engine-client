@@ -11,6 +11,7 @@ export default function RosterPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
+  const [expandedId, setExpandedId] = useState<number | null>(null); // NEW: State to track the expanded card
 
   useEffect(() => {
     const fetchRoster = async () => {
@@ -37,12 +38,16 @@ export default function RosterPage() {
   }, []);
 
   useEffect(() => {
-    // Filter the roster based on the search term
     const results = fullRoster.filter(character =>
       character.name.toLowerCase().includes(searchTerm.toLowerCase())
     );
     setFilteredRoster(results);
   }, [searchTerm, fullRoster]);
+
+  // NEW: Handler to toggle which card is expanded
+  const handleToggleExpand = (characterId: number) => {
+    setExpandedId(prevId => (prevId === characterId ? null : characterId));
+  };
 
   if (isLoading) {
     return <div className="flex items-center justify-center h-full"><p className="text-white text-xl animate-pulse">Loading Full Roster...</p></div>;
@@ -70,7 +75,12 @@ export default function RosterPage() {
       <div className="flex-grow p-4 overflow-y-auto">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredRoster.map(character => (
-            <RosterCard key={character.id} character={character} />
+            <RosterCard 
+              key={character.id} 
+              character={character} 
+              isExpanded={expandedId === character.id} // Pass down whether this card should be expanded
+              onToggle={() => handleToggleExpand(character.id)} // Pass down the handler function
+            />
           ))}
         </div>
       </div>
