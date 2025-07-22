@@ -14,6 +14,13 @@ export default function RosterPage() {
 
   useEffect(() => {
     const fetchRoster = async () => {
+      const token = localStorage.getItem('arena-token');
+      if (!token) {
+        setError('Authentication error. Please log in.');
+        setIsLoading(false);
+        return;
+      }
+      
       try {
         // This uses the new, public /api/roster endpoint
         const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/roster`, { headers: { 'x-auth-token': token } });
