@@ -63,7 +63,7 @@ export default function RosterCard({ character, isExpanded, onToggle }: RosterCa
                 {/* Skill Info */}
                 <div className="flex-grow min-w-0">
                   <p className="font-bold text-white">{skill.name}</p>
-                  <p className="text-gray-400 text-xs truncate">{skill.description}</p>
+                  <p className="text-gray-400 text-xs">{skill.description}</p>
                 </div>
               </div>
             ))}
