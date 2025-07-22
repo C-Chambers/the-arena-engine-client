@@ -32,7 +32,7 @@ export default function RosterCard({ character, isExpanded, onToggle }: RosterCa
       }`}>
         <div className="p-4 border-t border-gray-700 bg-gray-800">
           <h4 className="font-semibold text-blue-300 mb-2">Skills:</h4>
-          <div className="space-y-2">
+          <div className="space-y-2 max-h-80 overflow-y-auto pr-2">
             {character.skills.map(skill => (
               <div key={skill.id} className="flex items-center gap-3 text-sm">
                 {/* Skill Icon */}
