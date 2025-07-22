@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { Skill } from '../types';
 
@@ -11,6 +11,11 @@ interface SkillImageGridProps {
 
 export default function SkillImageGrid({ skills, characterName }: SkillImageGridProps) {
   const [selectedSkill, setSelectedSkill] = useState<Skill | null>(null);
+
+  // Reset selected skill when character changes
+  useEffect(() => {
+    setSelectedSkill(null);
+  }, [characterName, skills]);
 
   if (!skills || skills.length === 0) {
     return (
