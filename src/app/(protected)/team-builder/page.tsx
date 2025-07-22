@@ -34,14 +34,31 @@ export default function TeamBuilderPage() {
 
         // Pre-populate the active team with the saved data
         const savedTeam = teamRes.data;
+
+        /*
+         * The API can return various id shapes (e.g. `id`, `character_id`, or even numeric strings).
+         * Here we normalise the id before attempting to match it against the roster so that the
+         * user’s current active team shows up reliably.
+         */
         const newTeamDisplay: (Character | null)[] = [null, null, null];
-        savedTeam.forEach((char: Character, index: number) => {
-          if (index < 3) {
-            // Find the full character object from the roster to ensure we have all data
-            const rosterChar = fullRoster.find((c: Character) => c.id === char.id);
-            if (rosterChar) {
-              newTeamDisplay[index] = rosterChar;
-            }
+        savedTeam.forEach((savedChar: any, index: number) => {
+          if (index > 2 || !savedChar) return;
+
+          const savedCharId = Number(savedChar.id ?? savedChar.character_id ?? savedChar.characterId);
+
+          // Attempt to locate the full data for this character in the roster list.
+          const rosterChar = fullRoster.find((c: Character) => Number(c.id) === savedCharId);
+
+          if (rosterChar) {
+            newTeamDisplay[index] = rosterChar;
+          } else {
+            // Fallback: use whatever the API gave us, but normalise the key names we rely on later.
+            newTeamDisplay[index] = {
+              ...savedChar,
+              id: savedCharId,
+              imageUrl: savedChar.imageUrl ?? savedChar.image_url ?? '',
+              isUnlocked: true, // If it’s in the user’s team, we can safely assume it’s unlocked.
+            } as Character;
           }
         });
         setActiveTeam(newTeamDisplay);
@@ -215,12 +232,26 @@ export default function TeamBuilderPage() {
             <h2 className="text-xl font-bold mb-4">Active Team</h2>
             <div className="grid grid-cols-3 gap-6 h-full">
               {activeTeam.map((char, index) => (
-                <div key={index} className="h-full bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center relative p-2 cursor-pointer hover:border-red-500" onClick={() => handleRemoveFromTeam(index)}>
+                <div
+                  key={index}
+                  className="h-full bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center relative p-2 cursor-pointer hover:border-red-500"
+                  onClick={() => handleRemoveFromTeam(index)}
+                >
                   {char && char.imageUrl ? (
                     <>
                       <Image src={char.imageUrl} alt={char.name} width={96} height={96} className="w-24 h-24 object-cover rounded mb-2" />
-                      <p className="font-bold text-center text-sm">{char.name}</p>
-                      <div className="absolute top-1 right-1 text-red-500 font-bold text-xl">×</div>
+                      <p className="font-bold text-center text-sm truncate w-full text-center" title={char.name}>
+                        {char.name}
+                      </p>
+                      <div
+                        className="absolute top-1 right-1 text-red-500 font-bold text-xl cursor-pointer"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemoveFromTeam(index);
+                        }}
+                      >
+                        ×
+                      </div>
                     </>
                   ) : (
                     <span className="text-gray-500 text-4xl">+</span>
