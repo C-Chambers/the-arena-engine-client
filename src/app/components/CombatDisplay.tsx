@@ -79,16 +79,13 @@ export default function CombatDisplay() {
       const caster = myPlayer.team.find((char: Character) => char.instanceId === casterInstanceId);
       if (caster) {
         const costReductionStatus = caster.statuses.find((s: any) => s.status === 'cost_reduction');
-        if (costReductionStatus) {
-          const reducedCost: Record<string, number> = {};
-          for (const [type, value] of Object.entries(skill.cost)) {
-            let newValue = value;
-            if (costReductionStatus.reduction_type === 'flat') {
-              newValue = Math.max(0, value - (costReductionStatus.value || 0));
-            } else if (costReductionStatus.reduction_type === 'percentage') {
-              newValue = Math.max(0, Math.floor(value * (1 - (costReductionStatus.value || 0) / 100)));
+        if (costReductionStatus && costReductionStatus.cost_change) {
+          const reducedCost: Record<string, number> = { ...skill.cost };
+          for (const [type, changeAmount] of Object.entries(costReductionStatus.cost_change)) {
+            if (reducedCost[type] !== undefined && typeof changeAmount === 'number') {
+              // Apply the cost change (negative values reduce cost, positive increase)
+              reducedCost[type] = Math.max(0, reducedCost[type] + changeAmount);
             }
-            reducedCost[type] = newValue;
           }
           effectiveSkillCost = reducedCost;
         }
@@ -195,8 +192,7 @@ export default function CombatDisplay() {
               // NEW: Check for cost reduction status
               const costReductionStatus = char.statuses.find((s: any) => s.status === 'cost_reduction');
               const costReduction = costReductionStatus ? {
-                value: costReductionStatus.value || 0,
-                reduction_type: costReductionStatus.reduction_type || 'flat'
+                cost_change: costReductionStatus.cost_change || {}
               } : null;
               
               if (skill.is_locked_by_default && !isEnabled) {

@@ -10,7 +10,7 @@ interface SkillButtonProps {
   stunnedClasses: string[] | null; // UPDATED: Replaces isStunned: boolean
   isEmpowered: boolean;
   bonusDamage?: number; // NEW: Optional prop for bonus damage
-  costReduction?: { value: number; reduction_type: 'flat' | 'percentage' } | null; // NEW: Cost reduction status
+  costReduction?: { cost_change: Record<string, number> } | null; // UPDATED: Use cost_change instead
   onClick: () => void;
 }
 
@@ -22,22 +22,17 @@ export default function SkillButton({ skill, canAfford, cooldown, isQueued, stun
 
   const empoweredClasses = isEmpowered ? 'ring-2 ring-yellow-400 shadow-lg shadow-yellow-400/50' : '';
 
-  // NEW: Calculate the reduced cost if cost reduction is active
+  // UPDATED: Calculate the reduced cost using cost_change
   const getReducedCost = (originalCost: Record<string, number>) => {
-    if (!costReduction) return originalCost;
+    if (!costReduction || !costReduction.cost_change) return originalCost;
 
-    const reducedCost: Record<string, number> = {};
+    const reducedCost: Record<string, number> = { ...originalCost };
     
-    for (const [type, value] of Object.entries(originalCost)) {
-      let newValue = value;
-      
-      if (costReduction.reduction_type === 'flat') {
-        newValue = Math.max(0, value - costReduction.value);
-      } else if (costReduction.reduction_type === 'percentage') {
-        newValue = Math.max(0, Math.floor(value * (1 - costReduction.value / 100)));
+    for (const [type, changeAmount] of Object.entries(costReduction.cost_change)) {
+      if (reducedCost[type] !== undefined) {
+        // Apply the cost change (negative values reduce cost, positive increase)
+        reducedCost[type] = Math.max(0, reducedCost[type] + changeAmount);
       }
-      
-      reducedCost[type] = newValue;
     }
     
     return reducedCost;

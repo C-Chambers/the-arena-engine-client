@@ -30,6 +30,7 @@ export interface ApplyStatusEffect extends BaseEffect {
   damageBonus?: number;
   reduction_type?: 'flat' | 'percentage';
   classes?: string[];
+  cost_change?: Record<string, number>; // For cost_reduction status - e.g., {"Random": -1}
 }
 
 // A union type that can be any of our defined effects
