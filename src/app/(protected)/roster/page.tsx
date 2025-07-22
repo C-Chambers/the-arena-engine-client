@@ -16,7 +16,7 @@ export default function RosterPage() {
     const fetchRoster = async () => {
       try {
         // This uses the new, public /api/roster endpoint
-        const response = await axios.get('http://localhost:3001/api/roster');
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/roster`, { headers: { 'x-auth-token': token } });
         setFullRoster(response.data);
         setFilteredRoster(response.data);
       } catch (err) {
