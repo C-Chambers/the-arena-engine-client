@@ -69,9 +69,28 @@ export default function CombatDisplay() {
   const opponentPlayer = gameState.players[Object.keys(gameState.players).find((id: any) => id !== myId)!];
   const isMyTurn = Number(gameState.activePlayerId) === Number(myId);
   
-  // --- UPDATED: canAffordSkill now uses the two-pass algorithm ---
-  const canAffordSkill = (skill: Skill) => {
+  // --- UPDATED: canAffordSkill now uses the two-pass algorithm and considers cost reduction ---
+  const canAffordSkill = (skill: Skill, casterInstanceId?: string) => {
     if (!myPlayer || !myPlayer.chakra) return false;
+    
+    // NEW: Apply cost reduction if the caster has it
+    let effectiveSkillCost = skill.cost;
+    if (casterInstanceId) {
+      const caster = myPlayer.team.find((char: Character) => char.instanceId === casterInstanceId);
+      if (caster) {
+        const costReductionStatus = caster.statuses.find((s: any) => s.status === 'cost_reduction');
+        if (costReductionStatus && costReductionStatus.cost_change) {
+          const reducedCost: Record<string, number> = { ...skill.cost };
+          for (const [type, changeAmount] of Object.entries(costReductionStatus.cost_change)) {
+            if (reducedCost[type] !== undefined && typeof changeAmount === 'number') {
+              // Apply the cost change (negative values reduce cost, positive increase)
+              reducedCost[type] = Math.max(0, reducedCost[type] + changeAmount);
+            }
+          }
+          effectiveSkillCost = reducedCost;
+        }
+      }
+    }
     
     // First, calculate the total cost of the queue plus the new skill
     const currentQueueCost = myPlayer.actionQueue.reduce((acc: any, action: any) => {
@@ -82,8 +101,8 @@ export default function CombatDisplay() {
     }, {});
     
     const totalCost = { ...currentQueueCost };
-    for (const type in skill.cost) {
-        totalCost[type] = (totalCost[type] || 0) + skill.cost[type];
+    for (const type in effectiveSkillCost) {
+        totalCost[type] = (totalCost[type] || 0) + effectiveSkillCost[type];
         }
 
     // Now, run the two-pass validation
@@ -170,6 +189,12 @@ export default function CombatDisplay() {
               const isEmpowered = char.statuses.some((s: any) => s.status === 'empower_skill' && s.skillId === skill.id);
               const isEnabled = char.statuses.some((s: any) => s.status === 'enable_skill' && s.skillId === skill.id);
               
+              // NEW: Check for cost reduction status
+              const costReductionStatus = char.statuses.find((s: any) => s.status === 'cost_reduction');
+              const costReduction = costReductionStatus ? {
+                cost_change: costReductionStatus.cost_change || {}
+              } : null;
+              
               if (skill.is_locked_by_default && !isEnabled) {
                 return null;
               }
@@ -178,11 +203,12 @@ export default function CombatDisplay() {
                 <SkillButton 
                   key={skill.id}
                   skill={skill}
-                  canAfford={canAffordSkill(skill)}
+                  canAfford={canAffordSkill(skill, char.instanceId)}
                   cooldown={cooldown}
                   isQueued={hasQueued}
                   stunnedClasses={stunnedClasses} // UPDATED: Pass the array of stunned classes
                   isEmpowered={isEmpowered}
+                  costReduction={costReduction} // NEW: Pass cost reduction status
                   onClick={() => {
                     setSelectedSkill(skill);
                     setSelectedCaster(char.instanceId);
