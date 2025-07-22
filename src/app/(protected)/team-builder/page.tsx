@@ -227,8 +227,8 @@ export default function TeamBuilderPage() {
         </div>
 
         {/* Right Column */}
-        <div className="w-1/2 flex flex-col gap-8">
-          <div className="flex-1 bg-gray-900 p-6 rounded-lg">
+        <div className="w-1/2 flex flex-col gap-8 h-full">
+          <div className="h-1/2 bg-gray-900 p-6 rounded-lg">
             <h2 className="text-xl font-bold mb-4">Active Team</h2>
             <div className="grid grid-cols-3 gap-6 h-full">
               {activeTeam.map((char, index) => (
@@ -259,9 +259,9 @@ export default function TeamBuilderPage() {
               ))}
             </div>
           </div>
-          <div className="flex-1 bg-gray-900 p-6 rounded-lg flex flex-col">
+          <div className="h-1/2 bg-gray-900 p-6 rounded-lg flex flex-col">
             <h2 className="text-xl font-bold mb-4">Skills of {selectedCharacter ? selectedCharacter.name.split(',')[0] : '...'}</h2>
-            <div className="overflow-y-auto space-y-2 pr-2 flex-grow">
+            <div className="overflow-y-auto space-y-2 pr-2 flex-grow min-h-0">
               {selectedCharacter ? selectedCharacter.skills.map(skill => (
                   <div key={skill.id} className="bg-gray-800 p-2 rounded">
                     <p className="font-semibold text-blue-300">{skill.name}</p>
