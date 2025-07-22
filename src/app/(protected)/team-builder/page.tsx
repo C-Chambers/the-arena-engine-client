@@ -34,17 +34,28 @@ export default function TeamBuilderPage() {
 
         // Pre-populate the active team with the saved data
         const savedTeam = teamRes.data;
+        console.log('Fetched saved team:', savedTeam); // Debug logging
+        
         const newTeamDisplay: (Character | null)[] = [null, null, null];
-        savedTeam.forEach((char: Character, index: number) => {
-          if (index < 3) {
-            // Find the full character object from the roster to ensure we have all data
-            const rosterChar = fullRoster.find((c: Character) => c.id === char.id);
-            if (rosterChar) {
-              newTeamDisplay[index] = rosterChar;
+        
+        // Handle different potential response formats
+        if (Array.isArray(savedTeam) && savedTeam.length > 0) {
+          savedTeam.forEach((char: Character, index: number) => {
+            if (index < 3 && char && char.id) {
+              // Find the full character object from the roster to ensure we have all data
+              const rosterChar = fullRoster.find((c: Character) => c.id === char.id);
+              if (rosterChar) {
+                newTeamDisplay[index] = rosterChar;
+              } else {
+                // Fallback: use the character data from the team API if roster doesn't have it
+                newTeamDisplay[index] = char;
+              }
             }
-          }
-        });
+          });
+        }
+        
         setActiveTeam(newTeamDisplay);
+        console.log('Active team set to:', newTeamDisplay); // Debug logging
 
         // Set the default selected character
         if (fullRoster.length > 0) {
@@ -52,8 +63,8 @@ export default function TeamBuilderPage() {
         }
         
       } catch (err) {
+        console.error('Error fetching team data:', err);
         setError('Failed to load team data.');
-        console.error(err);
       } finally {
         setIsLoading(false);
       }
@@ -84,6 +95,7 @@ export default function TeamBuilderPage() {
       const newTeam = [...activeTeam];
       newTeam[firstEmptySlot] = selectedCharacter;
       setActiveTeam(newTeam);
+      setSaveStatus(''); // Clear any previous status messages
     } else {
         setSaveStatus('Your team is full.');
     }
@@ -93,16 +105,21 @@ export default function TeamBuilderPage() {
     const newTeam = [...activeTeam];
     newTeam[index] = null;
     setActiveTeam(newTeam);
+    setSaveStatus(''); // Clear any previous status messages
   };
 
   const handleSaveTeam = async () => {
     setSaveStatus('Saving...');
-    if (activeTeam.some(member => member === null)) {
-      setSaveStatus('Your team must have 3 characters to save.');
+    
+    // Filter out null values and check if we have at least one character
+    const teamCharacters = activeTeam.filter(member => member !== null) as Character[];
+    
+    if (teamCharacters.length === 0) {
+      setSaveStatus('Your team must have at least 1 character to save.');
       return;
     }
 
-    const teamCharacterIds = activeTeam.map(member => member!.id);
+    const teamCharacterIds = teamCharacters.map(member => member.id);
     const token = localStorage.getItem('arena-token');
 
     if (!token) {
@@ -118,8 +135,8 @@ export default function TeamBuilderPage() {
       );
       setSaveStatus('Team saved successfully!');
     } catch (err) {
+      console.error('Error saving team:', err);
       setSaveStatus('Failed to save team.');
-      console.error(err);
     }
   };
 
@@ -215,12 +232,25 @@ export default function TeamBuilderPage() {
             <h2 className="text-xl font-bold mb-4">Active Team</h2>
             <div className="grid grid-cols-3 gap-6 h-full">
               {activeTeam.map((char, index) => (
-                <div key={index} className="h-full bg-gray-800 border-2 border-dashed border-gray-600 rounded-lg flex flex-col items-center justify-center relative p-2 cursor-pointer hover:border-red-500" onClick={() => handleRemoveFromTeam(index)}>
-                  {char && char.imageUrl ? (
+                <div 
+                  key={index} 
+                  className={`h-full bg-gray-800 border-2 border-dashed rounded-lg flex flex-col items-center justify-center relative p-2 ${
+                    char ? 'border-blue-500 cursor-pointer hover:border-red-500 transition-colors' : 'border-gray-600'
+                  }`}
+                  onClick={() => char && handleRemoveFromTeam(index)}
+                  title={char ? `Click to remove ${char.name}` : 'Empty slot'}
+                >
+                  {char ? (
                     <>
-                      <Image src={char.imageUrl} alt={char.name} width={96} height={96} className="w-24 h-24 object-cover rounded mb-2" />
-                      <p className="font-bold text-center text-sm">{char.name}</p>
-                      <div className="absolute top-1 right-1 text-red-500 font-bold text-xl">×</div>
+                      {char.imageUrl ? (
+                        <Image src={char.imageUrl} alt={char.name} width={96} height={96} className="w-24 h-24 object-cover rounded mb-2" />
+                      ) : (
+                        <div className="w-24 h-24 bg-gray-700 rounded mb-2 flex items-center justify-center text-xs text-gray-400">[P]</div>
+                      )}
+                      <p className="font-bold text-center text-sm text-white">{char.name}</p>
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-red-600 rounded-full flex items-center justify-center text-white font-bold text-sm hover:bg-red-700 transition-colors shadow-lg">
+                        ×
+                      </div>
                     </>
                   ) : (
                     <span className="text-gray-500 text-4xl">+</span>
