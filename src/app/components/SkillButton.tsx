@@ -13,7 +13,7 @@ interface SkillButtonProps {
   onClick: () => void;
 }
 
-export default function SkillButton({ skill, canAfford, cooldown, isQueued, stunnedClasses, isEmpowered, onClick }: SkillButtonProps) {
+export default function SkillButton({ skill, canAfford, cooldown, isQueued, stunnedClasses, isEmpowered, bonusDamage, onClick }: SkillButtonProps) {
   const isOnCooldown = cooldown > 0;
 
   // NEW: Check if this specific skill's class is included in the current stun classes
