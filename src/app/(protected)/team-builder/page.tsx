@@ -31,6 +31,7 @@ export default function TeamBuilderPage() {
         ]);
 
         const fullRoster = rosterRes.data;
+        console.log('Team builder data fetched:', fullRoster.slice(0, 2)); // Log first 2 characters for debugging
         setRoster(fullRoster);
 
         // Pre-populate the active team with the saved data

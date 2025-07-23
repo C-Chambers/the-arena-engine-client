@@ -23,8 +23,9 @@ export default function RosterPage() {
       }
       
       try {
-        // This uses the new, public /api/roster endpoint
-        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/roster`, { headers: { 'x-auth-token': token } });
+        // Use the same /api/characters endpoint as team builder to ensure isUnlocked property is included
+        const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/characters`, { headers: { 'x-auth-token': token } });
+        console.log('Roster data fetched:', response.data.slice(0, 2)); // Log first 2 characters for debugging
         setFullRoster(response.data);
         setFilteredRoster(response.data);
       } catch (err) {

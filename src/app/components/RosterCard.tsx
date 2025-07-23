@@ -22,7 +22,7 @@ export default function RosterCard({ character, isExpanded, onToggle }: RosterCa
         </div>
         <div>
           <h3 className="text-xl font-bold text-white">{character.name}</h3>
-          <p className="text-sm text-gray-400">{character.isUnlocked ? 'Unlocked' : 'Locked'}</p>
+          <p className="text-sm text-gray-400">{character.isUnlocked !== false ? 'Unlocked' : 'Locked'}</p>
         </div>
       </div>
 
