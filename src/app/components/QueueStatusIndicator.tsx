@@ -3,7 +3,7 @@
 import { useGame } from '../context/GameContext';
 
 export default function QueueStatusIndicator() {
-  const { isInQueue, queueInfo, statusMessage, isConnected } = useGame();
+  const { isInQueue, queueInfo, statusMessage, isConnected, leaveQueue } = useGame();
 
   if (!isConnected && !isInQueue) {
     return null; // Don't show anything if not connected and not in queue
@@ -36,6 +36,18 @@ export default function QueueStatusIndicator() {
       {isInQueue && queueInfo?.priority && (
         <div className="mt-2 text-xs text-orange-400">
           ⭐ Priority Queue
+        </div>
+      )}
+      
+      {/* Leave Queue Button - only show when in queue */}
+      {isInQueue && (
+        <div className="mt-3 pt-2 border-t border-gray-700">
+          <button
+            onClick={leaveQueue}
+            className="w-full bg-red-600 hover:bg-red-700 text-white text-xs font-semibold py-1.5 px-3 rounded transition-colors"
+          >
+            Leave Queue
+          </button>
         </div>
       )}
     </div>
