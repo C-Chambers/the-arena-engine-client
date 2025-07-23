@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, ReactNode, useRef, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import axios from 'axios';
 
@@ -53,7 +53,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   // Function to establish persistent WebSocket connection
-  const establishConnection = () => {
+  const establishConnection = useCallback(() => {
     const token = localStorage.getItem('arena-token');
     if (!token) {
       setStatusMessage('Authentication error. Please log in again.');
@@ -143,7 +143,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       console.error('WebSocket error:', error);
       setStatusMessage('Connection error occurred.');
     };
-  };
+  }, [router, handleGameEnd]);
 
   // Auto-establish connection when user is authenticated
   useEffect(() => {
@@ -158,7 +158,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         socket.current.close();
       }
     };
-  }, []);
+  }, [establishConnection]);
 
   const leaveQueue = () => {
     if (socket.current?.readyState === WebSocket.OPEN) {
