@@ -33,6 +33,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const reconnectAttempts = useRef(0);
   const maxReconnectAttempts = 5;
   const reconnectDelay = useRef(1000);
+  const shouldPreserveConnection = useRef(false);
   const router = useRouter();
 
   const handleGameEnd = useCallback(async (finalGameState: any) => {
@@ -50,6 +51,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     setGameState(null);
     setIsInQueue(false); // Clear queue status when game ends
+    shouldPreserveConnection.current = false; // Allow normal connection management
   }, [router]);
 
   // Function to establish persistent WebSocket connection
@@ -64,6 +66,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       // Already connected, just update status to show we're looking for match
       setStatusMessage('Looking for match...');
       setIsInQueue(true);
+      shouldPreserveConnection.current = true; // Preserve connection for queue persistence
       return;
     }
 
@@ -78,6 +81,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setIsConnected(true);
       setStatusMessage('Looking for match...');
       setIsInQueue(true);
+      shouldPreserveConnection.current = true; // Preserve connection for queue persistence
       reconnectAttempts.current = 0;
       reconnectDelay.current = 1000;
     };
@@ -98,6 +102,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         localStorage.setItem('myId', data.yourId);
         setGameState(data.state);
         setIsInQueue(false); // No longer in queue
+        shouldPreserveConnection.current = false; // Allow normal connection management
         router.push('/battle');
       } else if (data.type === 'GAME_UPDATE') {
         setGameState(data.state);
@@ -107,6 +112,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } else if (data.type === 'OPPONENT_DISCONNECTED') {
         alert("Opponent has disconnected. Returning to dashboard.");
         setIsInQueue(false);
+        shouldPreserveConnection.current = false; // Allow normal connection management
         router.push('/dashboard');
       } else if (data.type === 'ACTION_ERROR') {
         setErrorMsg(data.message);
@@ -114,9 +120,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } else if (data.type === 'MATCHMAKING_ERROR') {
         setStatusMessage(`Matchmaking Error: ${data.message}`);
         setIsInQueue(false);
+        shouldPreserveConnection.current = false; // Allow normal connection management
       } else if (data.type === 'ERROR') {
         setStatusMessage(`Error: ${data.message}`);
         setIsInQueue(false);
+        shouldPreserveConnection.current = false; // Allow normal connection management
         ws.close();
       }
     };
@@ -124,7 +132,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     ws.onclose = () => {
       console.log('WebSocket connection closed');
       setIsConnected(false);
-      setIsInQueue(false);
+      // Only clear queue status if we're not preserving the connection
+      if (!shouldPreserveConnection.current) {
+        setIsInQueue(false);
+      }
       socket.current = null;
       
       // Attempt to reconnect if we have attempts left
@@ -149,10 +160,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
   }, [router, handleGameEnd]);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - but preserve connection if needed
   useEffect(() => {
     return () => {
-      if (socket.current) {
+      // Only close connection if we're not preserving it for queue persistence
+      if (socket.current && !shouldPreserveConnection.current) {
         socket.current.close();
       }
     };
@@ -160,8 +172,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
 
   const leaveQueue = () => {
     if (socket.current?.readyState === WebSocket.OPEN) {
+      shouldPreserveConnection.current = false; // Allow connection to be closed
       socket.current.close();
       setIsInQueue(false);
+      setIsConnected(false);
       setStatusMessage('Left the queue.');
     }
   };
