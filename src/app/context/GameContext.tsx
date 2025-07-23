@@ -35,7 +35,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const reconnectDelay = useRef(1000);
   const router = useRouter();
 
-  const handleGameEnd = async (finalGameState: any) => {
+  const handleGameEnd = useCallback(async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
     try {
       const response = await axios.get(`${process.env.NEXT_PUBLIC_API_URL}/api/ratings`, {
@@ -50,7 +50,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
     setGameState(null);
     setIsInQueue(false); // Clear queue status when game ends
-  };
+  }, [router]);
 
   // Function to establish persistent WebSocket connection
   const establishConnection = useCallback(() => {
