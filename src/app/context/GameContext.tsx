@@ -27,7 +27,13 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const [postGameStats, setPostGameStats] = useState<any>(null);
   const [errorMsg, setErrorMsg] = useState('');
   const [isConnected, setIsConnected] = useState(false);
-  const [isInQueue, setIsInQueue] = useState(false);
+  const [isInQueue, setIsInQueue] = useState(() => {
+    // Initialize from localStorage to persist across navigation
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('arena-in-queue') === 'true';
+    }
+    return false;
+  });
   const [queueInfo, setQueueInfo] = useState<any>(null);
   const socket = useRef<WebSocket | null>(null);
   const reconnectAttempts = useRef(0);
@@ -35,6 +41,19 @@ export function GameProvider({ children }: { children: ReactNode }) {
   const reconnectDelay = useRef(1000);
   const shouldPreserveConnection = useRef(false);
   const router = useRouter();
+
+  // Wrapper function to update queue state and persist to localStorage
+  const updateQueueState = (inQueue: boolean) => {
+    setIsInQueue(inQueue);
+    if (typeof window !== 'undefined') {
+      if (inQueue) {
+        localStorage.setItem('arena-in-queue', 'true');
+      } else {
+        localStorage.removeItem('arena-in-queue');
+      }
+    }
+    console.log(`Queue state updated: ${inQueue}`);
+  };
 
   const handleGameEnd = useCallback(async (finalGameState: any) => {
     const token = localStorage.getItem('arena-token');
@@ -50,7 +69,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       router.push('/post-game');
     }
     setGameState(null);
-    setIsInQueue(false); // Clear queue status when game ends
+    updateQueueState(false); // Clear queue status when game ends
     shouldPreserveConnection.current = false; // Allow normal connection management
   }, [router]);
 
@@ -65,7 +84,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (socket.current?.readyState === WebSocket.OPEN) {
       // Already connected, just update status to show we're looking for match
       setStatusMessage('Looking for match...');
-      setIsInQueue(true);
+      updateQueueState(true);
       shouldPreserveConnection.current = true; // Preserve connection for queue persistence
       return;
     }
@@ -80,7 +99,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       console.log('WebSocket connection established');
       setIsConnected(true);
       setStatusMessage('Looking for match...');
-      setIsInQueue(true);
+      updateQueueState(true);
       shouldPreserveConnection.current = true; // Preserve connection for queue persistence
       reconnectAttempts.current = 0;
       reconnectDelay.current = 1000;
@@ -91,7 +110,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       
       if (data.type === 'STATUS') {
         setStatusMessage(data.message);
-        setIsInQueue(true);
+        updateQueueState(true);
         setQueueInfo(data); // Store additional queue information
         
         // Log enhanced queue info if available
@@ -101,7 +120,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       } else if (data.type === 'GAME_START') {
         localStorage.setItem('myId', data.yourId);
         setGameState(data.state);
-        setIsInQueue(false); // No longer in queue
+        updateQueueState(false); // No longer in queue
         shouldPreserveConnection.current = false; // Allow normal connection management
         router.push('/battle');
       } else if (data.type === 'GAME_UPDATE') {
@@ -111,7 +130,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
         }
       } else if (data.type === 'OPPONENT_DISCONNECTED') {
         alert("Opponent has disconnected. Returning to dashboard.");
-        setIsInQueue(false);
+        updateQueueState(false);
         shouldPreserveConnection.current = false; // Allow normal connection management
         router.push('/dashboard');
       } else if (data.type === 'ACTION_ERROR') {
@@ -119,11 +138,11 @@ export function GameProvider({ children }: { children: ReactNode }) {
         setTimeout(() => setErrorMsg(''), 4000);
       } else if (data.type === 'MATCHMAKING_ERROR') {
         setStatusMessage(`Matchmaking Error: ${data.message}`);
-        setIsInQueue(false);
+        updateQueueState(false);
         shouldPreserveConnection.current = false; // Allow normal connection management
       } else if (data.type === 'ERROR') {
         setStatusMessage(`Error: ${data.message}`);
-        setIsInQueue(false);
+        updateQueueState(false);
         shouldPreserveConnection.current = false; // Allow normal connection management
         ws.close();
       }
@@ -134,7 +153,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
       setIsConnected(false);
       // Only clear queue status if we're not preserving the connection
       if (!shouldPreserveConnection.current) {
-        setIsInQueue(false);
+        updateQueueState(false);
       }
       socket.current = null;
       
@@ -160,6 +179,15 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
   }, [router, handleGameEnd]);
 
+  // Check if we need to restore connection on component mount
+  useEffect(() => {
+    // If we're supposed to be in queue but not connected, restore connection
+    if (isInQueue && !isConnected && !socket.current) {
+      console.log('Restoring WebSocket connection - was in queue');
+      establishConnection();
+    }
+  }, [isInQueue, isConnected, establishConnection]);
+
   // Cleanup on unmount - but preserve connection if needed
   useEffect(() => {
     return () => {
@@ -174,7 +202,7 @@ export function GameProvider({ children }: { children: ReactNode }) {
     if (socket.current?.readyState === WebSocket.OPEN) {
       shouldPreserveConnection.current = false; // Allow connection to be closed
       socket.current.close();
-      setIsInQueue(false);
+      updateQueueState(false);
       setIsConnected(false);
       setStatusMessage('Left the queue.');
     }
