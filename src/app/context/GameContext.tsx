@@ -61,7 +61,10 @@ export function GameProvider({ children }: { children: ReactNode }) {
     }
 
     if (socket.current?.readyState === WebSocket.OPEN) {
-      return; // Already connected
+      // Already connected, just update status to show we're looking for match
+      setStatusMessage('Looking for match...');
+      setIsInQueue(true);
+      return;
     }
 
     console.log('Establishing WebSocket connection...');
@@ -73,7 +76,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
     ws.onopen = () => {
       console.log('WebSocket connection established');
       setIsConnected(true);
-      setStatusMessage('Connected! Ready to find matches.');
+      setStatusMessage('Looking for match...');
+      setIsInQueue(true);
       reconnectAttempts.current = 0;
       reconnectDelay.current = 1000;
     };
@@ -145,20 +149,14 @@ export function GameProvider({ children }: { children: ReactNode }) {
     };
   }, [router, handleGameEnd]);
 
-  // Auto-establish connection when user is authenticated
+  // Cleanup on unmount
   useEffect(() => {
-    const token = localStorage.getItem('arena-token');
-    if (token && !socket.current) {
-      establishConnection();
-    }
-
-    // Cleanup on unmount
     return () => {
       if (socket.current) {
         socket.current.close();
       }
     };
-  }, [establishConnection]);
+  }, []);
 
   const leaveQueue = () => {
     if (socket.current?.readyState === WebSocket.OPEN) {
@@ -169,14 +167,8 @@ export function GameProvider({ children }: { children: ReactNode }) {
   };
 
   const connectAndFindMatch = () => {
-    // If already connected, just join queue
-    if (socket.current?.readyState === WebSocket.OPEN) {
-      setStatusMessage('Joining queue...');
-      setIsInQueue(true);
-      return;
-    }
-
-    // If not connected, establish connection first
+    // Always establish connection when user wants to play
+    // This ensures we connect only when explicitly requested
     establishConnection();
   };
 
