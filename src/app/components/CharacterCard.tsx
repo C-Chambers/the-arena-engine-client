@@ -12,10 +12,11 @@ interface CharacterCardProps {
 
 export default function CharacterCard({ character, isPlayer, isSelected, onClick }: CharacterCardProps) {
   const hpPercentage = (character.currentHp / character.maxHp) * 100;
+  const isInvulnerable = character.statuses?.some((s: any) => s.status === 'invulnerable');
 
   return (
     <div 
-      className={`flex items-center gap-4 p-2 rounded-lg transition-all ${!character.isAlive ? 'opacity-40 bg-gray-700' : 'bg-gray-800'} ${onClick && character.isAlive ? 'cursor-pointer hover:ring-2 hover:ring-red-500' : ''} ${isSelected ? 'ring-2 ring-yellow-400' : ''}`}
+      className={`flex items-center gap-4 p-2 rounded-lg transition-all ${!character.isAlive ? 'opacity-40 bg-gray-700' : isInvulnerable ? 'bg-blue-900 border-2 border-blue-400' : 'bg-gray-800'} ${onClick && character.isAlive && !isInvulnerable ? 'cursor-pointer hover:ring-2 hover:ring-red-500' : isInvulnerable ? 'cursor-not-allowed' : ''} ${isSelected ? 'ring-2 ring-yellow-400' : ''}`}
       onClick={onClick}
     >
       {/* Portrait */}

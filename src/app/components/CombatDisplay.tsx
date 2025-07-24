@@ -148,7 +148,8 @@ export default function CombatDisplay() {
               character={char} 
               isPlayer={false} 
               onClick={() => {
-                  if (selectedSkill && isMyTurn && char.isAlive) {
+                  const isInvulnerable = char.statuses.some((s: any) => s.status === 'invulnerable');
+                  if (selectedSkill && isMyTurn && char.isAlive && !isInvulnerable) {
                       handleQueueSkill(char.instanceId);
                   }
               }}
@@ -171,7 +172,8 @@ export default function CombatDisplay() {
                 isPlayer={true} 
                 isSelected={selectedCaster === char.instanceId}
                 onClick={() => {
-                  if (selectedSkill && isMyTurn && char.isAlive) {
+                  const isInvulnerable = char.statuses.some((s: any) => s.status === 'invulnerable');
+                  if (selectedSkill && isMyTurn && char.isAlive && !isInvulnerable) {
                     handleQueueSkill(char.instanceId);
                   }
                 }}
