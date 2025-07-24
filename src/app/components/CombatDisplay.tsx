@@ -186,8 +186,8 @@ export default function CombatDisplay() {
               const stunStatus = char.statuses.find((status: any) => status.status === 'stun');
               const stunnedClasses = stunStatus ? stunStatus.classes : null;
 
-              const isEmpowered = char.statuses.some((s: any) => s.status === 'empower_skill' && s.skillId === skill.id);
-              const isEnabled = char.statuses.some((s: any) => s.status === 'enable_skill' && s.skillId === skill.id);
+              const isEmpowered = char.statuses.some((s: any) => s.status === 'empower_skill' && s.skillId == skill.id);
+              const isEnabled = char.statuses.some((s: any) => s.status === 'enable_skill' && s.skillId == skill.id);
               
               // NEW: Check for cost reduction status
               const costReductionStatus = char.statuses.find((s: any) => s.status === 'cost_reduction');
