@@ -13,11 +13,6 @@ interface CharacterCardProps {
 export default function CharacterCard({ character, isPlayer, isSelected, onClick }: CharacterCardProps) {
   const hpPercentage = (character.currentHp / character.maxHp) * 100;
   const isInvulnerable = character.statuses?.some((s: any) => s.status === 'invulnerable');
-  
-  // DEBUG: Log when a character has invulnerable status
-  if (isInvulnerable) {
-    console.log(`DEBUG CLIENT: ${character.name} is invulnerable, statuses:`, character.statuses);
-  }
 
   return (
     <div 
@@ -39,11 +34,6 @@ export default function CharacterCard({ character, isPlayer, isSelected, onClick
             {/* --- Status Icon Container --- */}
             <div className="flex gap-1.5">
                 {character.statuses && character.statuses.map((status: StatusEffect, index: number) => {
-                    // DEBUG: Log all statuses for invulnerable characters
-                    if (status.status === 'invulnerable') {
-                        console.log(`DEBUG CLIENT: Found invulnerable status on ${character.name}:`, status);
-                    }
-                    
                     // Ensure the status has the required info before rendering
                     if (status.sourceSkill && status.sourceSkill.iconUrl) {
                         return (
